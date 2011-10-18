@@ -8,7 +8,7 @@
 /* local includes */
 #include <model.h>
 #include <surface.h>
-//#include <camera.h>
+#include <camera.h>
 
 /* library includes */
 #include <algorithm>
@@ -46,13 +46,15 @@ ray::object::~object() {
 }
 
 const ray::object& ray::object::operator =(const ray::object& obj) {
-  delete[] _data;
+  if(this != &obj) {
+    delete[] _data;
 
-  _data = new double[obj._capa * V_SIZE];
-  _size = obj._size;
-  _capa = obj._capa;
-  _surf = obj._surf;
-  memcpy(_data, obj._data, _capa * V_SIZE * sizeof(double));
+    _data = new double[obj._capa * V_SIZE];
+    _size = obj._size;
+    _capa = obj._capa;
+    _surf = obj._surf;
+    memcpy(_data, obj._data, _capa * V_SIZE * sizeof(double));
+  }
 
   return obj;
 }
@@ -156,11 +158,14 @@ void ray::model::cmd(const obj::objstream& src) {
 
   for(src_t::const_iterator iter = src.begin(); iter != src.end(); iter++) {
     object& obj = *_objects[iter->first];
+    ray::matrix<4, 4> tran = ray::identity<4>();
 
     for(src_t::group::transform_iterator ti = iter->second.tran_begin();
         ti != iter->second.tran_end(); ti++) {
-      obj *= (*ti)->matrix();
+      tran *= (*ti)->matrix();
     }
+
+    obj *= tran;
   }
 }
 
@@ -234,12 +239,32 @@ int main(int argc, char** argv) {
 
   obj::objstream obj(argv[2]);
   obj::objstream cmd(argv[1]);
-  ray::model  m;
+  ray::model m;
 
   m.build(obj);
   m.cmd(cmd);
 
-  std::cout << m << std::endl;
+  for(int i = 0;i < cmd.size(); i++) {
+    ray::camera c(cmd.cam(cmd[i]->name()));
+    std::ostringstream ostr;
+
+    c.umin() = cmd[i]->minx();
+    c.umax() = cmd[i]->maxx();
+    c.vmin() = cmd[i]->miny();
+    c.vmax() = cmd[i]->maxy();
+
+    cv::Mat image(c.vmax() - c.vmin(), c.umax() - c.umin(), CV_8UC3);
+
+    if(dynamic_cast<obj::objstream::wireframe*>(cmd[i]) != NULL) {
+      c.draw_wire(&m, image);
+    }
+
+    cv::imshow(cmd[i]->name(), image);
+    cv::waitKey(-1);
+
+    ostr << "files/" << cmd[i]->name() << ".png";
+    cv::imwrite(ostr.str().c_str(), image);
+  }
 
   return 0;
 }

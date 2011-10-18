@@ -100,10 +100,10 @@ namespace ray {
       inline const_iterator end()   const { return _surf.end();   }
 
     protected:
-      double*              _data;
-      unsigned int         _size;
-      unsigned int         _capa;
-      std::vector<polygon> _surf;
+      double*      _data;
+      unsigned int _size;
+      unsigned int _capa;
+      poly_t       _surf;
   };
 
   class model {

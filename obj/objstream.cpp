@@ -138,6 +138,12 @@ obj::objstream::objstream(const std::string& f_name) : _fname(f_name) {
   fclose(yyin);
 }
 
+obj::objstream::~objstream() {
+  for(auto iter = _views.begin(); iter != _views.end(); iter++) {
+    delete (*iter);
+  }
+}
+
 /**
  * TODO
  *

@@ -1,0 +1,24 @@
+This is a simple ray tracer written to help expand my knowledge of file parsing,
+GUI's and as a side project that could keep me busy between more important
+projects. As with the previous version of my ray tracer I have made it public so
+that I may point at it and say "look at what I did, isn't it cool".
+
+There is some funkyness to how this program has been designed to work. It will
+read an obj file as the model no matter what. However, I plan to make it do its
+rendering in two different ways.
+
+1. if there is a command file provided, it will perform the commands and output
+   the image in png format. This style of running the program was done to
+   attempt to help some friends taking a graphics class. This allows me to use
+   my ray tracer to render an image, show them what theirs should look like, and
+   tell them where they are going wrong. In addition the other method of running
+   the program will be able to produce a command file. This way of running the 
+   program should be much faster as it will not load a gui. So a user could use
+   the other method of running the program to produce a cool image, and then use
+   this method for the ray tracing.
+
+2. if there is no command file provided, it will load a gui and use perspective
+   projection rendering to display the image. it will allow the user to move the
+   camera around and save off the camera to a command file so that a ray traced
+   image can be quickly rendered. If the user chooses they can run the ray
+   tracer in the gui to see the rendering process.

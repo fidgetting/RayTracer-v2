@@ -11,13 +11,20 @@
 #include <model.h>
 #include <ray.h>
 
+#include <objstream.hpp>
+
 #include <utility>
+
+#include <cv.h>
+#include <cvaux.h>
+#include <cxcore.h>
+#include <highgui.h>
 
 namespace ray {
 
   class camera {
     public:
-      camera() : _fp(), _n(), _u(), _v() { };
+      camera(const obj::objstream::camera& src);
       ~camera() { };
 
       inline ray::vector&    fp()         { return _fp;   }
@@ -41,8 +48,9 @@ namespace ray {
       inline int&            vmax()       { return _vmax; }
       inline int             vmax() const { return _vmax; }
 
-      void click(model* m);
-      ray::vector color(l_ray* r) const;
+      void draw_wire(model* m, cv::Mat& dst);
+      void click(model* m, cv::Mat& dst);
+      matrix<4, 4> projection() const;
 
 #ifdef DEBUG
       static bool print;
@@ -51,12 +59,6 @@ namespace ray {
 #endif
 
     private:
-
-      ray::vector reflectance(l_ray* r, vector p, vector n,
-                                 const material& mat, const surface* s) const;
-
-      bool shadowed(const vector& pt, const vector& dir, const model* m,
-                    const surface* s) const;
 
       ray::vector _fp, _vrp;
       ray::vector _n, _u, _v;

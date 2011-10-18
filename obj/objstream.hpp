@@ -28,7 +28,6 @@ namespace obj {
 
   class objstream {
     public:
-      objstream(const std::string& f_name);
 
       /* ******************************************************************** */
       /* *** group definitions ********************************************** */
@@ -235,6 +234,73 @@ namespace obj {
           std::vector<transform*> _trans;
       };
 
+      /* ******************************************************************** */
+      /* *** how and what are we going to render **************************** */
+      /* ******************************************************************** */
+
+      class view {
+        public:
+
+          view(const std::string& name) : _name(name) { }
+          virtual ~view() { }
+
+          inline std::string name() const { return _name; }
+
+          inline int  minx() const { return _minx; }
+          inline int& minx()       { return _minx; }
+          inline int  miny() const { return _miny; }
+          inline int& miny()       { return _miny; }
+          inline int  maxx() const { return _maxx; }
+          inline int& maxx()       { return _maxx; }
+          inline int  maxy() const { return _maxy; }
+          inline int& maxy()       { return _maxy; }
+
+        protected:
+
+          std::string _name;
+          int _minx, _miny;
+          int _maxx, _maxy;
+      };
+
+      class wireframe : public view {
+        public:
+          wireframe(const std::string& name) : view(name) { }
+          virtual ~wireframe() { }
+      };
+
+      class camera {
+        public:
+
+          camera() { }
+          camera(std::string name, double d) : _name(name), _d(d), _fp(),
+              _vpn(), _vup() { }
+          ~camera() { }
+
+          inline std::string        name() const { return _name; }
+          inline double                d() const { return _d;    }
+          inline ray::vector    fp() const { return _fp;   }
+          inline ray::vector&   fp()       { return _fp;   }
+          inline ray::vector   vpn() const { return _vpn;  }
+          inline ray::vector&  vpn()       { return _vpn;  }
+          inline ray::vector   vup() const { return _vup;  }
+          inline ray::vector&  vup()       { return _vup;  }
+
+        private:
+
+          std::string _name;
+          double      _d;
+          ray::vector _fp;
+          ray::vector _vpn;
+          ray::vector _vup;
+      };
+
+      /* ******************************************************************** */
+      /* *** the actual class *********************************************** */
+      /* ******************************************************************** */
+
+      objstream(const std::string& f_name);
+      ~objstream();
+
       typedef std::map<std::string, group> group_map_t;
       typedef group_map_t::              iterator               iterator;
       typedef group_map_t::        const_iterator         const_iterator;
@@ -253,14 +319,25 @@ namespace obj {
       inline const std::string& src_file() const { return _fname;  }
       inline const std::string& mat_file() const { return _matlib; }
 
+      inline void push(view* v) { _views.push_back(v); }
+      inline int  size() const { return _views.size(); }
+
       inline group& operator[](const std::string& name)
       { return _groups[name]; }
 
+      inline camera& cam(const std::string& name)
+      { return _cameras[name]; }
+
+      inline view* operator[](int idx)
+      { return _views[idx]; }
+
       private:
 
-      std::map<std::string, group> _groups;
-      std::string                  _matlib;
-      std::string                  _fname;
+      std::map<std::string, group>  _groups;
+      std::map<std::string, camera> _cameras;
+      std::vector<view*>            _views;
+      std::string                   _matlib;
+      std::string                   _fname;
   };
 }
 

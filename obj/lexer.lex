@@ -18,15 +18,18 @@
   int yyposs = 0;
 
 #ifdef DEBUG
-#define yyposs_inc yyposs += strlen(yytext); std::cout << yytext;
+#define yyposs_inc      yyposs += strlen(yytext); std::cout << yytext;
+#define yyposs_ret(ret) yyposs += strlen(yytext); std::cout <<  "[" << yytext \
+                        << "," << ret << "]"; return ret;
 #else
-#define yyposs_inc yyposs += strlen(yytext);
+#define yyposs_inc      yyposs += strlen(yytext);
+#define yyposs_ret(ret) yyposs += strlen(yytext); return ret;
 #endif
 
 %}
 
 num [0-9]
-not_num [a-zA-Z_~\-\(\)]
+not_num [a-zA-Z_~\(\)]
 id  {not_num}({not_num}|{num}){2,}
 eol (\n|\r|\r\n)
 ws  ([ \t])+
@@ -36,22 +39,24 @@ float -?{num}+(\.{num}+)?
 %%
 
 
-"usemtl" { yyposs_inc; return MTL;     }
-"mtllib" { yyposs_inc; return MTLLIB;  }
+"usemtl" { yyposs_ret(MTL)     }
+"mtllib" { yyposs_ret(MTLLIB)  }
 
-{id}     { yyposs_inc; strcpy(yylval.str_t, yytext); return STRING_LIT; }
-{float}  { yyposs_inc; strcpy(yylval.str_t, yytext); return NUM_LIT;  }
+{float}  { strcpy(yylval.str_t, yytext); yyposs_ret(NUM_LIT); }
+{id}     { strcpy(yylval.str_t, yytext); yyposs_ret(STRING_LIT); }
 
-"g"      { yyposs_inc; return GROUP;     }
-"v"      { yyposs_inc; return VERTEX;    }
-"vt"     { yyposs_inc; return TEXTURE;   }
-"vn"     { yyposs_inc; return NORMAL;    }
-"f"      { yyposs_inc; return FACE;      }
-"/"      { yyposs_inc; return SLASH;     }
-"r"      { yyposs_inc; return ROTATE;    }
-"t"      { yyposs_inc; return TRANSLATE; }
-"s"      { yyposs_inc; return SCALE;     }
-"a"      { yyposs_inc; return ARBITRARY; }
+"g"      { yyposs_ret(GROUP);     }
+"v"      { yyposs_ret(VERTEX);    }
+"vt"     { yyposs_ret(TEXTURE);   }
+"vn"     { yyposs_ret(NORMAL);    }
+"f"      { yyposs_ret(FACE);      }
+"/"      { yyposs_ret(SLASH);     }
+"r"      { yyposs_ret(ROTATE);    }
+"t"      { yyposs_ret(TRANSLATE); }
+"s"      { yyposs_ret(SCALE);     }
+"a"      { yyposs_ret(ARBITRARY); }
+"c"      { yyposs_ret(CAMERA);    }
+"w"      { yyposs_ret(WIREFRAME); }
 
 {comment}   { yyposs_inc; }
 {ws}        { yyposs_inc; }

@@ -49,6 +49,8 @@ void yyerror(const char* msg) {
 %token         OBJF
 %token         MTL
 %token         MTLLIB
+%token         CAMERA
+%token         WIREFRAME
 %token <str_t> NUM_LIT
 %token <str_t> STRING_LIT
 
@@ -116,6 +118,30 @@ stmt:
       (*dest)[$2].push_m(ar);
     }
     
+  | CAMERA STRING_LIT NUM_LIT 
+                      NUM_LIT NUM_LIT NUM_LIT
+                      NUM_LIT NUM_LIT NUM_LIT
+                      NUM_LIT NUM_LIT NUM_LIT
+    {
+      objstream::camera c($2, atof($3));
+      c.fp() [0] = atof($4);  c.fp() [1] = atof($5);  c.fp() [2] = atof($6);
+      c.vpn()[0] = atof($7);  c.vpn()[1] = atof($8);  c.vpn()[2] = atof($9);
+      c.vup()[0] = atof($10); c.vup()[1] = atof($11); c.vup()[2] = atof($12);
+      dest->cam($2) = c;
+    }
+    
+  | WIREFRAME STRING_LIT NUM_LIT NUM_LIT NUM_LIT NUM_LIT
+    {
+      objstream::wireframe* w = new objstream::wireframe($2);
+      
+      w->minx() = atoi($3);
+      w->miny() = atoi($4);
+      w->maxx() = atoi($5);
+      w->maxy() = atoi($6);
+    
+      dest->push(w);
+    }
+    
   | MTLLIB STRING_LIT
     {  }
     
@@ -133,17 +159,17 @@ exprlist:
 
 expr:
     NUM_LIT
-    { store = atoi($1); verts.push_back(store); }
+    { store = atoi($1) - 1; verts.push_back(store); }
   | NUM_LIT SLASH NUM_LIT
-    { store = atoi($1); verts.push_back(store);
-      store = atoi($3); texts.push_back(store); }
+    { store = atoi($1) - 1; verts.push_back(store);
+      store = atoi($3) - 1; texts.push_back(store); }
   | NUM_LIT SLASH NUM_LIT SLASH NUM_LIT
-    { store = atoi($1); verts.push_back(store);
-      store = atoi($3); texts.push_back(store);
-      store = atoi($5); norms.push_back(store); }
+    { store = atoi($1) - 1; verts.push_back(store);
+      store = atoi($3) - 1; texts.push_back(store);
+      store = atoi($5) - 1; norms.push_back(store); }
   | NUM_LIT SLASH SLASH NUM_LIT
-  	{ store = atoi($1); verts.push_back(store);
-  	  store = atoi($4); norms.push_back(store); }
+  	{ store = atoi($1) - 1; verts.push_back(store);
+  	  store = atoi($4) - 1; norms.push_back(store); }
 ;
 
 %%

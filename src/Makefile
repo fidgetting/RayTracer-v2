@@ -15,7 +15,7 @@ CXX     = g++
 CFLAGS  = -g -Wall -O3 -std=c++0x `pkg-config opencv --cflags`
 INCPATH = -I. -I../obj -I../util
 EXE     = ../model
-LIBS    = `pkg-config opencv --libs`
+LIBS    = `pkg-config opencv --libs` -L/usr/lib -lQtGui -lQtCore -lpthread
 
 OBJS = $(BIN_DIR)/transform.o \
        $(BIN_DIR)/model.o     \

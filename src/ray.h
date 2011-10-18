@@ -28,10 +28,10 @@ namespace ray {
   class l_ray {
     public:
 
-      l_ray(model* _m, camera* _gen, const ray::vector& _src_p,
+      l_ray(model* _m, const ray::vector& _src_p,
           const ray::vector _dir, cv::Vec<uc, 3>& _pixel) :
-            _m(_m),     _generator(_gen), _src_point(_src_p), _direction(_dir),
-            _pixel(_pixel), _src(NULL), _cont(1.0), _depth(0), _density(1.0) { }
+            _m(_m), _src_point(_src_p), _direction(_dir), _pixel(_pixel),
+            _src(NULL), _cont(1.0), _depth(0), _density(1.0) { }
       virtual ~l_ray() { }
 
       bool operator()();
@@ -50,10 +50,15 @@ namespace ray {
       inline double&         density()       { return _density;   }
       inline double          density() const { return _density;   }
 
+      ray::vector color();
+
     protected:
 
+      ray::vector reflectance(vector p, vector n, const surface* s);
+      bool shadowed(const ray::vector& pt, const ray::vector& U,
+          const surface* s) const;
+
       model*               _m;
-      camera*              _generator;
       ray::vector          _src_point;
       ray::vector          _direction;
       cv::Vec<uc, 3>&      _pixel;

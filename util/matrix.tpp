@@ -149,7 +149,7 @@ namespace ray {
    * @return the output stream that is being printed to
    */
   template<int R, int C>
-  std::ostream& operator<<(std::ostream& ostr, const matrix<R, C> mat) {
+  std::ostream& operator<<(std::ostream& ostr, const matrix<R, C>& mat) {
     for(int i = 0; i < mat.rows(); i++) {
       ostr << "[ ";
       for(int j = 0; j < mat.cols(); j++) {
