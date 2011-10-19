@@ -292,17 +292,27 @@ int main(int argc, char** argv) {
     c.vmin() = cmd[i]->miny();
     c.vmax() = cmd[i]->maxy();
 
+    typedef cv::Vec<uc, 3> elem_t;
     cv::Mat image(c.vmax() - c.vmin(), c.umax() - c.umin(), CV_8UC3);
 
-    if(dynamic_cast<obj::objstream::wireframe*>(cmd[i]) != NULL) {
-      c.draw_wire(&m, image);
+    for(int j = 0; j < 500; j++) {
+      for(auto iter = image.begin<elem_t>();
+          iter != image.end<elem_t>(); iter++) {
+        *iter = elem_t();
+      }
+
+      if(dynamic_cast<obj::objstream::wireframe*>(cmd[i]) != NULL) {
+        c.draw_wire(&m, image);
+      }
+
+      //cv::imshow(cmd[i]->name(), image);
+      //cv::waitKey(10);
+
+      c.rotate(0.034906585, ray::vector());
     }
 
-    //cv::imshow(cmd[i]->name(), image);
-    //cv::waitKey(-1);
-
-    //ostr << "files/" << cmd[i]->name() << ".png";
-    //cv::imwrite(ostr.str().c_str(), image);
+    ostr << "files/" << cmd[i]->name() << ".png";
+    cv::imwrite(ostr.str().c_str(), image);
   }
 
   return 0;

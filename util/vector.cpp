@@ -69,6 +69,22 @@ ray::vector ray::vector::cross(const vector& rhs) const {
 }
 
 /**
+ * Returns a vector that is perpendicular to the current vector. The returned
+ * vector will be of length 1.
+ *
+ * @return a vector normal to the current one
+ */
+ray::vector ray::vector::normal() const {
+  ray::vector ret = *this;
+
+  ret[0] += 10;
+  ret = this->cross(ret);
+  ret.normalize();
+
+  return ret;
+}
+
+/**
  * Calculates the distance between two vector, treating them as points
  *
  * @param rhs the vector to calculate the distance to

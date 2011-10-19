@@ -45,6 +45,7 @@ namespace ray {
 
       /* ********** Math Operators ********** */
       vector cross(const vector& rhs) const;
+      vector normal() const;
       double distance(const vector& rhs) const;
       double dot(const vector& rhs) const;
       double length() const;

@@ -51,6 +51,57 @@ ray::camera::camera(const obj::objstream::camera& src) :
   _vrp = _fp + (_n * (-_fl));
 }
 
+void ray::camera::rotate(double amount, ray::vector around) {
+  ray::matrix<4, 4> R, z;
+  ray::matrix<4, 4> trans;
+  ray::matrix<4, 4> rotat;
+  ray::vector vecs[3];
+
+  /* create R */
+  vecs[2] = _v;
+  vecs[0] = _v.normal();
+  vecs[1] = vecs[0].cross(vecs[2]);
+
+  vecs[0].normalize();
+  vecs[1].normalize();
+  vecs[2].normalize();
+
+  R[3][3] = 1;
+  for(int i = 0; i < 3; i++)
+    for(int j = 0; j < 3; j++)
+      R[i][j] = vecs[i][j];
+
+  /* create z */
+  z = ray::identity<4>();
+  z[0][0] =  std::cos(amount);
+  z[0][1] =  std::sin(amount);
+  z[1][0] = -std::sin(amount);
+  z[1][1] =  std::cos(amount);
+
+  /* finish the rotation matrix */
+  rotat = R.t() * z * R;
+
+  /* create translate to */
+  trans = ray::identity<4>();
+  trans[0][3] = around[0];
+  trans[1][3] = around[1];
+  trans[2][3] = around[2];
+
+  R = trans * rotat;
+
+  /* create translate back */
+  trans[0][3] = -around[0];
+  trans[1][3] = -around[1];
+  trans[2][3] = -around[2];
+
+  /* move the camera */
+  _fp  =  (R * trans) * _fp;
+  _n   = rotat * _n;
+  _u   = rotat * _u;
+  _v   = rotat * _v;
+  _vrp = _fp + (_n * (-_fl));
+}
+
 void ray::camera::draw_wire(model* m, cv::Mat& dst) {
   int x1, y1;
   int x2, y2;

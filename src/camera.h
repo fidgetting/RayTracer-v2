@@ -48,7 +48,9 @@ namespace ray {
       inline int&            vmax()       { return _vmax; }
       inline int             vmax() const { return _vmax; }
 
+      void rotate(double amount, ray::vector around);
       void draw_wire(model* m, cv::Mat& dst);
+
       void click(model* m, cv::Mat& dst);
       matrix<4, 4> projection() const;
 

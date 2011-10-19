@@ -17,14 +17,12 @@ INCPATH = -I. -I../obj -I../util
 EXE     = ../model
 LIBS    = `pkg-config opencv --libs` -L/usr/lib -lQtGui -lQtCore -lpthread
 
-OBJS = $(BIN_DIR)/transform.o \
-       $(BIN_DIR)/model.o     \
+OBJS = $(BIN_DIR)/model.o     \
        $(BIN_DIR)/surface.o   \
        $(BIN_DIR)/ray.o       \
        $(BIN_DIR)/camera.o    \
 
 HEAD = Makefile               \
-       transform.h            \
        surface.h              \
        model.h                \
        ray.h                  \
