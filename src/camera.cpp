@@ -71,20 +71,21 @@ void ray::camera::draw_wire(model* m, cv::Mat& dst) {
 
     for(auto oi = obj.begin(); oi != obj.end(); oi++) {
       for(auto pi = oi->begin(); pi != oi->end() - 1; pi++) {
-        x1 = -int(obj[*pi][0]) - _umin;
+        x1 =  int(obj[*pi][0]) - _umin;
         y1 = -int(obj[*pi][1]) - _vmin;
-        x2 = -int(obj[*(pi + 1)][0]) - _umin;
+        x2 =  int(obj[*(pi + 1)][0]) - _umin;
         y2 = -int(obj[*(pi + 1)][1]) - _vmin;
 
+        //std::cout << "[" << x1 << ", " << y1 << "] -> [" << x2 << ", " << y2 << "]" << std::endl;
         cv::line(dst, cv::Point(x1, y1), cv::Point(x2, y2), cv::Scalar(255, 255, 255));;
       }
 
       auto s = oi->end() - 1;
       auto e = oi->begin();
 
-      x1 = -int(obj[*s][0]) - _umin;
+      x1 =  int(obj[*s][0]) - _umin;
       y1 = -int(obj[*s][1]) - _vmin;
-      x2 = -int(obj[*e][0]) - _umin;
+      x2 =  int(obj[*e][0]) - _umin;
       y2 = -int(obj[*e][1]) - _vmin;
 
       cv::line(dst, cv::Point(x1, y1), cv::Point(x2, y2), cv::Scalar(255, 255, 255));
@@ -192,7 +193,7 @@ ray::matrix<4, 4> ray::camera::projection() const {
   proj[3][3] = 0;
 
   rota[0][0] = _u[0]; rota[0][1] = _u[1]; rota[0][2] = _u[2];
-  rota[1][0] = _v[0]; rota[1][1] = _v[1]; rota[2][2] = _v[2];
+  rota[1][0] = _v[0]; rota[1][1] = _v[1]; rota[1][2] = _v[2];
   rota[2][0] = _n[0]; rota[2][1] = _n[1]; rota[2][2] = _n[2];
 
   tran[0][3] = -_fp[0];

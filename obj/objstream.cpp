@@ -31,17 +31,18 @@ ray::matrix<4, 4> obj::objstream::rotate::matrix() const {
   ray::matrix<4, 4> R, z;
   ray::vector vecs[3];
   ray::vector m;
+  double dot;
 
   /* create w */
   vecs[2] = _w;
   vecs[2].normalize();
 
   /* create u */
-  m = vecs[2];
-  if(     m[0] <= m[1] && m[0] <= m[2]) m[0] = 1;
-  else if(m[1] <= m[2])                 m[1] = 1;
-  else                                  m[2] = 1;
-  m.normalize();
+  m[0] = 1;
+  if((dot = m.dot(vecs[2])) == 1 || dot == -1) {
+    m[0] = 0;
+    m[1] = 1;
+  }
   vecs[0] = vecs[2].cross(m);
   vecs[0].normalize();
 
@@ -57,8 +58,8 @@ ray::matrix<4, 4> obj::objstream::rotate::matrix() const {
 
   /* create z */
   z[0][0] =  std::cos(_r);
-  z[0][1] = -std::sin(_r);
-  z[1][0] =  std::sin(_r);
+  z[0][1] =  std::sin(_r);
+  z[1][0] = -std::sin(_r);
   z[1][1] =  std::cos(_r);
   z[2][2] = 1;
   z[3][3] = 1;

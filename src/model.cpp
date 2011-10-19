@@ -34,17 +34,35 @@ ray::vector ray::light::direction(ray::vector src) const {
   return ret;
 }
 
+/**
+ * TODO
+ */
 ray::object::object() : _data(new double[4]), _size(0), _capa(1), _surf() { }
+
+/**
+ * TODO
+ *
+ * @param obj
+ */
 ray::object::object(const object& obj) :
         _data(new double[obj._capa * 4]), _size(obj._size), _capa(obj._capa),
         _surf(obj._surf) {
   memcpy(_data, obj._data, _capa * 4 * sizeof(double));
 }
 
+/**
+ * TODO
+ */
 ray::object::~object() {
   delete[] _data;
 }
 
+/**
+ * TODO
+ *
+ * @param obj
+ * @return
+ */
 const ray::object& ray::object::operator =(const ray::object& obj) {
   if(this != &obj) {
     delete[] _data;
@@ -59,14 +77,30 @@ const ray::object& ray::object::operator =(const ray::object& obj) {
   return obj;
 }
 
+/**
+ * TODO
+ *
+ * @param p
+ */
 void ray::object::push_polygon(const ray::polygon& p) {
   _surf.push_back(p);
 }
 
+/**
+ * TODO
+ *
+ * @param v
+ * @return
+ */
 unsigned int ray::object::index(const vector& v) const {
   return v.ptr() - _data;
 }
 
+/**
+ * TODO
+ *
+ * @param v
+ */
 void ray::object::push_vector(const obj::objstream::vertex& v) {
   /* check if the object has enough space */
   if(_size == _capa) {
@@ -153,6 +187,11 @@ void ray::model::build(const obj::objstream& src) {
   }
 }
 
+/**
+ * TODO
+ *
+ * @param src
+ */
 void ray::model::cmd(const obj::objstream& src) {
   typedef obj::objstream src_t;
 
@@ -259,11 +298,11 @@ int main(int argc, char** argv) {
       c.draw_wire(&m, image);
     }
 
-    cv::imshow(cmd[i]->name(), image);
-    cv::waitKey(-1);
+    //cv::imshow(cmd[i]->name(), image);
+    //cv::waitKey(-1);
 
-    ostr << "files/" << cmd[i]->name() << ".png";
-    cv::imwrite(ostr.str().c_str(), image);
+    //ostr << "files/" << cmd[i]->name() << ".png";
+    //cv::imwrite(ostr.str().c_str(), image);
   }
 
   return 0;
