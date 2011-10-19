@@ -14,6 +14,8 @@
 #include <objstream.hpp>
 
 #include <utility>
+#include <sys/time.h>
+#include <unistd.h>
 
 #include <cv.h>
 #include <cvaux.h>
@@ -26,6 +28,12 @@ namespace ray {
     public:
       camera(const obj::objstream::camera& src);
       ~camera() { };
+
+      enum axis {
+        x_axis = 0,
+        y_axis = 1,
+        z_axis = 2
+      };
 
       inline ray::vector&    fp()         { return _fp;   }
       inline ray::vector     fp()   const { return _fp;   }
@@ -48,7 +56,8 @@ namespace ray {
       inline int&            vmax()       { return _vmax; }
       inline int             vmax() const { return _vmax; }
 
-      void rotate(double amount, ray::vector around);
+      void translate(double amount, axis which);
+      void rotate(double amount, ray::vector around, axis which);
       void draw_wire(model* m, cv::Mat& dst);
 
       void click(model* m, cv::Mat& dst);
@@ -67,6 +76,52 @@ namespace ray {
       double _fl;
       int _umin, _umax;
       int _vmin, _vmax;
+  };
+
+  class display {
+    public:
+
+      enum event_t {
+        move = 0,
+        l_down = 1,
+        r_down = 2,
+        m_down = 3,
+        l_up = 4,
+        r_up = 5,
+        m_up = 6
+      };
+
+      enum state_t {
+        none = 0,
+        left = 1,
+        right = 2,
+        middle = 3,
+      };
+
+      display(ray::model* m, ray::camera* cam);
+      virtual ~display() { }
+
+      void show();
+      void exec();
+
+      static void mouse(int event, int x, int y, int flags, void* disp);
+
+      void move_e(int x, int y);
+      void left_e(bool down);
+      void right_e(bool down);
+      void middle_e(bool down);
+
+    protected:
+
+      ray::model*    _m;
+      ray::camera*   _cam;
+      ray::vector    _rot;
+      int            last_x;
+      int            last_y;
+      struct timeval last_t;
+      state_t        _state;
+
+      cv::Mat image;
   };
 
 }

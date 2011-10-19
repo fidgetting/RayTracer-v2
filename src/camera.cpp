@@ -22,6 +22,10 @@ using std::get;
 #define X_PRINT 0
 #define Y_PRINT 0
 
+#define WIND_X 1000
+#define WIND_Y 1000
+#define WIND "render"
+
 #ifdef DEBUG
 bool ray::camera::print = false;
 #else
@@ -51,15 +55,29 @@ ray::camera::camera(const obj::objstream::camera& src) :
   _vrp = _fp + (_n * (-_fl));
 }
 
-void ray::camera::rotate(double amount, ray::vector around) {
+void ray::camera::translate(double amount, axis which) {
+  switch(which) {
+    case x_axis: _fp = _fp + (_u * amount); break;
+    case y_axis: _fp = _fp + (_v * amount); break;
+    case z_axis: _fp = _fp + (_n * amount); break;
+  }
+  _vrp = _fp + (_n * (-_fl));
+}
+
+void ray::camera::rotate(double amount, ray::vector around, axis which) {
   ray::matrix<4, 4> R, z;
   ray::matrix<4, 4> trans;
   ray::matrix<4, 4> rotat;
   ray::vector vecs[3];
 
   /* create R */
-  vecs[2] = _v;
-  vecs[0] = _v.normal();
+  switch(which) {
+    case x_axis: vecs[2] = _v; break;
+    case y_axis: vecs[2] = _u; break;
+    case z_axis: return;       break;
+  }
+
+  vecs[0] = vecs[2].normal();
   vecs[1] = vecs[0].cross(vecs[2]);
 
   vecs[0].normalize();
@@ -252,4 +270,101 @@ ray::matrix<4, 4> ray::camera::projection() const {
   tran[2][3] = -_fp[2];
 
   return proj * rota * tran;
+}
+
+ray::display::display(ray::model* m, ray::camera* cam) :
+    _m(m), _cam(cam), _rot(), last_x(-1), last_y(-1), _state(none),
+    image(WIND_X, WIND_Y, CV_8UC3) {
+  cv::namedWindow(WIND, CV_WINDOW_AUTOSIZE);
+  cvSetMouseCallback(WIND, ray::display::mouse, this);
+  gettimeofday(&last_t, NULL);
+}
+
+void ray::display::show() {
+  for(auto iter = image.begin<cv::Vec<uc, 3> >();
+      iter != image.end<cv::Vec<uc, 3> >(); iter++) {
+    *iter = cv::Vec<uc, 3>();
+  }
+
+  _cam->draw_wire(_m, image);
+  cv::imshow(WIND, image);
+}
+
+void ray::display::exec() {
+  show();
+  cv::waitKey(-1);
+}
+
+void ray::display::mouse(int event, int x, int y, int flags, void* disp) {
+  ray::display* data = (ray::display*)disp;
+
+  switch(event) {
+    case move:   data->move_e(x, y);    break;
+    case l_down: data->left_e(true);    break;
+    case r_down: data->right_e(true);   break;
+    case m_down: data->middle_e(true);  break;
+    case l_up:   data->left_e(false);   break;
+    case r_up:   data->right_e(false);  break;
+    case m_up:   data->middle_e(false); break;
+  }
+}
+
+void ray::display::move_e(int x, int y) {
+  struct timeval curr;
+  long seconds, useconds;
+  ray::vector diff;
+
+  /* this function can get overloaded      */
+  /* so we calculate  time since last call */
+  gettimeofday(&curr, NULL);
+  seconds  = curr.tv_sec  - last_t.tv_sec;
+  useconds = curr.tv_usec - last_t.tv_usec;
+  if((seconds * 1000 + useconds/1000.0) < 100.0) {
+    return;
+  }
+
+  switch(_state) {
+    case none: /* do nothing */ break;
+    case left:
+      _cam->rotate((x - last_x) * 0.0174, _rot, ray::camera::x_axis);
+      _cam->rotate((y - last_y) * 0.0174, _rot, ray::camera::y_axis);
+      break;
+    case right:
+      _cam->translate((x - last_x) * 0.008, ray::camera::x_axis);
+      _cam->translate(-(y - last_y) * 0.008, ray::camera::y_axis);
+      break;
+    case middle:
+      _cam->translate((y - last_y), ray::camera::z_axis);
+      break;
+  }
+
+  show();
+
+  last_x = x;
+  last_y = y;
+  gettimeofday(&last_t, NULL);
+}
+
+void ray::display::left_e(bool down) {
+  if(_state == none && down) {
+    _state = left;
+  } else if(_state == left && !down) {
+    _state = none;
+  }
+}
+
+void ray::display::right_e(bool down) {
+  if(_state == none && down) {
+    _state = right;
+  } else if(_state == right && !down) {
+    _state = none;
+  }
+}
+
+void ray::display::middle_e(bool down) {
+  if(_state == none && down) {
+    _state = middle;
+  } else if(_state == middle && !down) {
+    _state = none;
+  }
 }
