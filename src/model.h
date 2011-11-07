@@ -82,6 +82,7 @@ namespace ray {
       void push_polygon(const ray::polygon& p);
 
       unsigned int index(const vector& v) const;
+      void alter_normal(const vector& v, int i);
 
       inline const vector operator[](int i) const { return ray::vector(&_data[i * V_SIZE]); }
       inline       vector operator[](int i)       { return ray::vector(&_data[i * V_SIZE]); }
@@ -92,6 +93,9 @@ namespace ray {
       inline unsigned int     size() const { return _size; }
       inline unsigned int capacity() const { return _capa; }
 
+      inline vector  norm(int idx) const { return _norm[idx]; }
+      inline vector& norm(int idx)       { return _norm[idx]; }
+
       void operator*=(const ray::matrix<4, 4>& mat);
 
       inline       iterator begin()       { return _surf.begin(); }
@@ -100,10 +104,11 @@ namespace ray {
       inline const_iterator end()   const { return _surf.end();   }
 
     protected:
-      double*      _data;
-      unsigned int _size;
-      unsigned int _capa;
-      poly_t       _surf;
+      double*                  _data;
+      unsigned int             _size;
+      unsigned int             _capa;
+      poly_t                   _surf;
+      std::vector<ray::vector> _norm;
   };
 
   class model {
@@ -123,6 +128,8 @@ namespace ray {
 
       void build(const obj::objstream& src);
       void cmd(  const obj::objstream& src);
+
+      ray::vector center() const;
 
       inline       l_iterator l_begin()       { return _lights.begin(); }
       inline       l_iterator l_end()         { return _lights.end();   }

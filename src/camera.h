@@ -59,6 +59,7 @@ namespace ray {
       void translate(double amount, axis which);
       void rotate(double amount, ray::vector around, axis which);
       void draw_wire(model* m, cv::Mat& dst);
+      void vector_color(model* m);
 
       void click(model* m, cv::Mat& dst);
       matrix<4, 4> projection() const;

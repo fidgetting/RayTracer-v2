@@ -39,8 +39,7 @@ float -?{num}+(\.{num}+)?
 %%
 
 
-"usemtl" { yyposs_ret(MTL)     }
-"mtllib" { yyposs_ret(MTLLIB)  }
+"usemtl" { yyposs_ret(USEMTL)     }
 
 {float}  { strcpy(yylval.str_t, yytext); yyposs_ret(NUM_LIT); }
 {id}     { strcpy(yylval.str_t, yytext); yyposs_ret(STRING_LIT); }
@@ -57,6 +56,9 @@ float -?{num}+(\.{num}+)?
 "a"      { yyposs_ret(ARBITRARY); }
 "c"      { yyposs_ret(CAMERA);    }
 "w"      { yyposs_ret(WIREFRAME); }
+"l"      { yyposs_ret(LIGHT);     }
+"m"      { yyposs_ret(MATERIAL);  }
+"g"      { yyposs_ret(SHADE);     }
 
 {comment}   { yyposs_inc; }
 {ws}        { yyposs_inc; }

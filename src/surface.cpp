@@ -84,6 +84,15 @@ int ray::surface::id_gen = 0;
   return i;
 }*/
 
+void ray::polygon::set_normal() {
+  if(_indeces.size() > 2) {
+    ray::vector a = (*_owner)[_indeces[0]];
+    ray::vector b = (*_owner)[_indeces[1]];
+    ray::vector c = (*_owner)[_indeces[2]];
+    _n = (a - b).cross(c - b);
+  }
+}
+
 /**
  * virtual function overloaded from the surface class. This looks a little odd
  * since it has the "v == v" in it, but that is to prevent compiler warnings.

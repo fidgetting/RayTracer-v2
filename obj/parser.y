@@ -24,6 +24,7 @@ extern int yyline;
 extern int yyposs;
 
 std::string        objn = "default";
+std::string        mtln = "";
 std::vector<int>   verts;
 std::vector<int>   texts;
 std::vector<int>   norms;
@@ -43,12 +44,11 @@ void yyerror(const char* msg) {
 
 %token         ROTATE TRANSLATE SCALE ARBITRARY
 %token         VERTEX TEXTURE NORMAL
+%token         MATERIAL LIGHT SHADE USEMTL
 %token         GROUP
 %token         FACE
 %token         SLASH
 %token         OBJF
-%token         MTL
-%token         MTLLIB
 %token         CAMERA
 %token         WIREFRAME
 %token <str_t> NUM_LIT
@@ -91,7 +91,7 @@ stmt:
   | FACE
     { verts.clear(); texts.clear(); norms.clear(); }
     exprlist
-    { (*dest)[objn].push_f(objstream::face(verts, texts, norms, "")); }
+    { (*dest)[objn].push_f(objstream::face(verts, texts, norms, mtln)); }
   
   | ROTATE STRING_LIT NUM_LIT NUM_LIT NUM_LIT NUM_LIT
     { (*dest)[$2].push_m(
@@ -142,11 +142,34 @@ stmt:
       dest->push(w);
     }
     
-  | MTLLIB STRING_LIT
-    {  }
+  | LIGHT NUM_LIT NUM_LIT NUM_LIT NUM_LIT NUM_LIT NUM_LIT NUM_LIT
+    {
+      objstream::light* l = new objstream::light();
+      
+      l->poss()[0] = $2; l->poss()[1] = $3; l->poss()[2] = $4; l->poss()[3] = $5;
+      l->illu()[0] = $6; l->illu()[1] = $7; l->illu()[2] = $8;
+      
+      dest->push_l(l);
+    }
     
-  | MTL STRING_LIT
-    {  }
+  | MATERIAL STRING_LIT NUM_LIT NUM_LIT NUM_LIT NUM_LIT NUM_LIT
+    {
+      objstream::material m($2);
+      
+      m.rgb()[0] = $3; m.rgb()[1] = $4; m.rgb()[2] = $5;
+      m.s() = $6;
+      m.alpha() = $7;
+      
+      dest->mat($2) = m;
+    }
+    
+  | SHADE STRING_LIT NUM_LIT NUM_LIT NUM_LIT NUM_LIT
+    {
+      /* do nothing */
+    }
+    
+  | USEMTL STRING_LIT
+    { mtln = $2; }
     
   | GROUP STRING_LIT
     { objn = $2; }

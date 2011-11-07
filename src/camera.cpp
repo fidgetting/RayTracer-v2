@@ -105,7 +105,7 @@ void ray::camera::rotate(double amount, ray::vector around, axis which) {
   trans[1][3] = around[1];
   trans[2][3] = around[2];
 
-  R = trans * rotat;
+  R = rotat * trans;
 
   /* create translate back */
   trans[0][3] = -around[0];
@@ -113,7 +113,7 @@ void ray::camera::rotate(double amount, ray::vector around, axis which) {
   trans[2][3] = -around[2];
 
   /* move the camera */
-  _fp  =  (R * trans) * _fp;
+  _fp  =  (trans * R) * _fp;
   _n   = rotat * _n;
   _u   = rotat * _u;
   _v   = rotat * _v;
@@ -145,7 +145,6 @@ void ray::camera::draw_wire(model* m, cv::Mat& dst) {
         x2 =  int(obj[*(pi + 1)][0]) - _umin;
         y2 = -int(obj[*(pi + 1)][1]) - _vmin;
 
-        //std::cout << "[" << x1 << ", " << y1 << "] -> [" << x2 << ", " << y2 << "]" << std::endl;
         cv::line(dst, cv::Point(x1, y1), cv::Point(x2, y2), cv::Scalar(255, 255, 255));;
       }
 
@@ -159,6 +158,45 @@ void ray::camera::draw_wire(model* m, cv::Mat& dst) {
 
       cv::line(dst, cv::Point(x1, y1), cv::Point(x2, y2), cv::Scalar(255, 255, 255));
 
+    }
+  }
+}
+
+void ray::camera::vector_color(model* m) {
+  ray::vector Lp, Rl;
+  ray::vector p, n, v;
+  ray::material mat;
+  int pidx;
+
+  for(model::iterator iter = m->begin(); iter != m->end(); iter++) {
+    std::cout << "group " << iter->first << ":" << std::endl;
+    pidx = 0;
+
+    for(object::iterator oi = iter->second->begin(); oi != iter->second->end(); oi++) {
+      std::cout << "  polygon " << pidx << ":" << std::endl;
+      mat = m->mat(oi->material());
+
+      for(polygon::iterator pi = oi->begin(); pi != oi->end(); pi++) {
+        ray::vector color;
+        p = (*iter->second)[*pi];
+        n = iter->second->norm(*pi);
+        v = p - _fp;
+        v.normalize();
+
+        for(model::l_iterator li = m->l_begin(); li != m->l_end(); li++) {
+          Lp = li->direction(p);
+          Lp.normalize();
+          Rl = n * (Lp.dot(n) * 2) - Lp;
+          Rl.normalize();
+
+          color += (mat.diffuse() * li->illumination() * Lp.dot(n)) +
+              (li->illumination() * mat.ks() * std::pow(v.dot(Rl), mat.alpha()));
+        }
+
+        std::cout << "    " << color[0] << " " << color[1] << " " << color[2] << std::endl;
+      }
+
+      pidx++;
     }
   }
 }
@@ -319,7 +357,7 @@ void ray::display::move_e(int x, int y) {
   gettimeofday(&curr, NULL);
   seconds  = curr.tv_sec  - last_t.tv_sec;
   useconds = curr.tv_usec - last_t.tv_usec;
-  if((seconds * 1000 + useconds/1000.0) < 100.0) {
+  if((seconds * 1000 + useconds/1000.0) < 50) {
     return;
   }
 

@@ -96,6 +96,7 @@ namespace ray {
       virtual ~polygon() { }
 
       inline void add_vertex(int idx) { _indeces.push_back(idx); }
+      void set_normal();
 
       inline int           size()             const { return _indeces.size();  }
       inline vector&     normal()                   { return _n;               }

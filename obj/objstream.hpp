@@ -294,6 +294,43 @@ namespace obj {
           ray::vector _vup;
       };
 
+      class light {
+        public:
+
+          light() { }
+
+          inline ray::vector  poss() const { return _poss; }
+          inline ray::vector& poss()       { return _poss; }
+          inline ray::vector  illu() const { return _illu; }
+          inline ray::vector& illu()       { return _illu; }
+
+        private:
+
+          ray::vector _poss;
+          ray::vector _illu;
+      };
+
+      class material {
+        public:
+
+          material(const std::string& name) : _name(name) { }
+
+          inline std::string   name() const { return _name;  }
+          inline std::string&  name()       { return _name;  }
+          inline ray::vector    rgb() const { return _rgb;   }
+          inline ray::vector&   rgb()       { return _rgb;   }
+          inline double           s() const { return _s;     }
+          inline double&          s()       { return _s;     }
+          inline double       alpha() const { return _alpha; }
+          inline double&      alpha()       { return _alpha; }
+
+        private:
+
+          std::string _name;
+          ray::vector _rgb;
+          double _s, _alpha;
+      };
+
       /* ******************************************************************** */
       /* *** the actual class *********************************************** */
       /* ******************************************************************** */
@@ -320,6 +357,7 @@ namespace obj {
       inline const std::string& mat_file() const { return _matlib; }
 
       inline void push(view* v) { _views.push_back(v); }
+      inline void push_l(light* l) { _lights.push_back(l); }
       inline int  size() const { return _views.size(); }
 
       inline group& operator[](const std::string& name)
@@ -328,16 +366,21 @@ namespace obj {
       inline camera& cam(const std::string& name)
       { return _cameras[name]; }
 
+      inline material& mat(const std::string& name)
+      { return _materials[name]; }
+
       inline view* operator[](int idx)
       { return _views[idx]; }
 
       private:
 
-      std::map<std::string, group>  _groups;
-      std::map<std::string, camera> _cameras;
-      std::vector<view*>            _views;
-      std::string                   _matlib;
-      std::string                   _fname;
+      std::map<std::string, group>    _groups;
+      std::map<std::string, camera>   _cameras;
+      std::map<std::string, material> _materials;
+      std::vector<view*>              _views;
+      std::vector<light*>             _lights;
+      std::string                     _matlib;
+      std::string                     _fname;
   };
 }
 

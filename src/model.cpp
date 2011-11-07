@@ -100,6 +100,30 @@ unsigned int ray::object::index(const vector& v) const {
  * TODO
  *
  * @param v
+ * @param i
+ */
+void ray::object::alter_normal(const vector& v, int i) {
+  ray::vector& dest = norm(i);
+
+  dest[0] *= dest[3];
+  dest[1] *= dest[3];
+  dest[2] *= dest[3];
+
+  dest[0] += v[0];
+  dest[1] += v[1];
+  dest[2] += v[2];
+
+  dest[3]++;
+
+  dest[0] /= dest[3];
+  dest[1] /= dest[3];
+  dest[2] /= dest[3];
+}
+
+/**
+ * TODO
+ *
+ * @param v
  */
 void ray::object::push_vector(const obj::objstream::vertex& v) {
   /* check if the object has enough space */
@@ -127,6 +151,8 @@ void ray::object::push_vector(const obj::objstream::vertex& v) {
     _data[idx + 3] /= _data[idx + 3];
   }
   _size++;
+
+  _norm.push_back(ray::vector());
 }
 
 /**
@@ -180,7 +206,12 @@ void ray::model::build(const obj::objstream& src) {
         p.add_vertex(*ii);
       }
 
+      p.set_normal();
       obj->push_polygon(p);
+
+      for(polygon::iterator pi = p.begin(); pi != p.end(); pi++) {
+        obj->alter_normal(p.normal(), *pi);
+      }
     }
 
     _objects[iter->first] = obj;
@@ -206,6 +237,27 @@ void ray::model::cmd(const obj::objstream& src) {
 
     obj *= tran;
   }
+}
+
+ray::vector ray::model::center() const {
+  ray::vector ret;
+  int total = 0;
+
+  for(auto iter = begin(); iter != end(); iter++) {
+    ray::object& obj = *iter->second;
+    total += obj.size();
+
+    for(unsigned int i = 0; i < obj.size(); i++) {
+      ret += obj[i];
+    }
+  }
+
+  ret[0] /= double(total);
+  ret[1] /= double(total);
+  ret[2] /= double(total);
+  ret[3] = 0;
+
+  return ret;
 }
 
 /**
@@ -287,36 +339,15 @@ int main(int argc, char** argv) {
     ray::camera c(cmd.cam(cmd[i]->name()));
     std::ostringstream ostr;
 
-    ray::display disp(&m, &c);
+    c.vector_color(&m);
+
+    /*ray::display disp(&m, &c);
 
     c.umin() = cmd[i]->minx();
     c.umax() = cmd[i]->maxx();
     c.vmin() = cmd[i]->miny();
     c.vmax() = cmd[i]->maxy();
-    disp.exec();
-
-    /*typedef cv::Vec<uc, 3> elem_t;
-    cv::Mat image(c.vmax() - c.vmin(), c.umax() - c.umin(), CV_8UC3);
-
-    for(;;) {
-      for(auto iter = image.begin<elem_t>();
-          iter != image.end<elem_t>(); iter++) {
-        *iter = elem_t();
-      }
-
-      if(dynamic_cast<obj::objstream::wireframe*>(cmd[i]) != NULL) {
-        c.draw_wire(&m, image);
-      }
-
-      cv::imshow(cmd[i]->name(), image);
-      cv::waitKey(10);
-
-      c.rotate(0.034906585, ray::vector(), ray::camera::x_axis);
-      c.translate(1, ray::camera::z_axis);
-    }
-
-    ostr << "files/" << cmd[i]->name() << ".png";
-    cv::imwrite(ostr.str().c_str(), image);*/
+    disp.exec();*/
   }
 
   return 0;
