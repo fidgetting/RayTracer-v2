@@ -91,6 +91,7 @@ void ray::polygon::set_normal() {
     ray::vector c = (*_owner)[_indeces[2]];
     _n = (a - b).cross(c - b);
     _n.normalize();
+    _n.negate();
   }
 }
 

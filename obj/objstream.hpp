@@ -86,6 +86,8 @@ namespace obj {
 
           inline const std::string& mat() const { return _mat; }
 
+          int id;
+
         private:
           std::vector<int> _verts;
           std::vector<int> _texts;

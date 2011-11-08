@@ -31,6 +31,7 @@ std::vector<int>   norms;
 std::istringstream istr;
 
 int    store;
+int id_gen = 0;
 
 void yyerror(const char* msg) {
   std::cout << msg << std::endl;
@@ -91,7 +92,12 @@ stmt:
   | FACE
     { verts.clear(); texts.clear(); norms.clear(); }
     exprlist
-    { (*dest)[objn].push_f(objstream::face(verts, texts, norms, mtln)); }
+    {
+      objstream::face f(verts, texts, norms, mtln);
+      f.id = id_gen++;
+    
+      (*dest)[objn].push_f(f);
+    }
   
   | ROTATE STRING_LIT NUM_LIT NUM_LIT NUM_LIT NUM_LIT
     { (*dest)[$2].push_m(
@@ -148,7 +154,7 @@ stmt:
       
       m.rgb()[0] = atof($3); m.rgb()[1] = atof($4); m.rgb()[2] = atof($5);
       m.s() = atof($6);
-      m.alpha() = atof($7);
+      m.alpha() = atof($7); 
       
       dest->mat($2) = m;
     }

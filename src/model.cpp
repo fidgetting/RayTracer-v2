@@ -219,6 +219,7 @@ void ray::model::build(const obj::objstream& src) {
       }
 
       p.set_normal();
+      p.id = fi->id;
       obj->push_polygon(p);
 
       for(polygon::iterator pi = p.begin(); pi != p.end(); pi++) {

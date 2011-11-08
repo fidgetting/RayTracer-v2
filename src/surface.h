@@ -121,6 +121,8 @@ namespace ray {
         intersection(const vector& U, const vector& L, const surface* skip)
         const;
 
+      int id;
+
     protected:
 
       std::vector<int> _indeces;

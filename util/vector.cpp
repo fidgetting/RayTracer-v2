@@ -10,6 +10,9 @@
 ray::vector::vector(double d) : data(NULL), del(true) {
   data = new double[V_SIZE];
   memset(data, 0, V_SIZE * sizeof(double));
+  data[0] = d;
+  data[1] = d;
+  data[2] = d;
   data[3] = 1.0;
 }
 
