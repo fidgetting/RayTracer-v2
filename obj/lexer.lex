@@ -58,7 +58,7 @@ float -?{num}+(\.{num}+)?
 "w"      { yyposs_ret(WIREFRAME); }
 "l"      { yyposs_ret(LIGHT);     }
 "m"      { yyposs_ret(MATERIAL);  }
-"g"      { yyposs_ret(SHADE);     }
+"gr"     { yyposs_ret(SHADER);    }
 
 {comment}   { yyposs_inc; }
 {ws}        { yyposs_inc; }

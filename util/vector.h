@@ -60,7 +60,7 @@ namespace ray {
 
     protected:
       double* data;
-      int     del;
+      bool    del;
   };
 }
 

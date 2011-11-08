@@ -16,6 +16,17 @@
 #include <iostream>
 
 /**
+ * Creates a material based upon the material read from the input file
+ */
+ray::material::material(const obj::objstream::material& mat) :
+    _name(mat.name()), _ks(mat.s()), _alpha(mat.alpha()), _kt(0),
+    _density(0), _diffuse(ray::identity<4>()) {
+  _diffuse[0][0] = mat.rgb()[0];
+  _diffuse[1][1] = mat.rgb()[1];
+  _diffuse[2][2] = mat.rgb()[2];
+}
+
+/**
  * gets the direction that the light is from a certain ponit
  *
  * @param src the location which we are requesting info for
@@ -201,6 +212,7 @@ void ray::model::build(const obj::objstream& src) {
     for(src_t::group::face_iterator fi = iter->second.face_begin();
         fi != iter->second.face_end(); fi++) {
       polygon p(obj);
+      p.material() = fi->mat();
 
       for(src_t::face::iterator ii = fi->v_begin(); ii != fi->v_end(); ii++) {
         p.add_vertex(*ii);
@@ -212,6 +224,10 @@ void ray::model::build(const obj::objstream& src) {
       for(polygon::iterator pi = p.begin(); pi != p.end(); pi++) {
         obj->alter_normal(p.normal(), *pi);
       }
+    }
+
+    for(unsigned int i = 0; i < obj->size(); i++) {
+      obj->norm(i).normalize();
     }
 
     _objects[iter->first] = obj;
@@ -236,6 +252,14 @@ void ray::model::cmd(const obj::objstream& src) {
     }
 
     obj *= tran;
+  }
+
+  for(src_t::l_const_iterator iter = src.l_begin(); iter != src.l_end(); iter++) {
+    _lights.push_back(**iter);
+  }
+
+  for(src_t::m_const_iterator iter = src.m_begin(); iter != src.m_end(); iter++) {
+    _materials[iter->first] = iter->second;
   }
 }
 
@@ -339,15 +363,23 @@ int main(int argc, char** argv) {
     ray::camera c(cmd.cam(cmd[i]->name()));
     std::ostringstream ostr;
 
-    c.vector_color(&m);
+    if(dynamic_cast<obj::objstream::wireframe*>(cmd[i]) != NULL) {
+      c.umin() = cmd[i]->minx();
+      c.umax() = cmd[i]->maxx();
+      c.vmin() = cmd[i]->miny();
+      c.vmax() = cmd[i]->maxy();
 
-    /*ray::display disp(&m, &c);
+      ray::display disp(&m, &c);
+      disp.exec();
+    } else {
+      c.umin() = cmd[i]->minx();
+      c.umax() = cmd[i]->maxx();
+      c.vmin() = cmd[i]->miny();
+      c.vmax() = cmd[i]->maxy();
 
-    c.umin() = cmd[i]->minx();
-    c.umax() = cmd[i]->maxx();
-    c.vmin() = cmd[i]->miny();
-    c.vmax() = cmd[i]->maxy();
-    disp.exec();*/
+      ray::display disp(&m, &c, false);
+      disp.exec();
+    }
   }
 
   return 0;

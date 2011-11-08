@@ -150,9 +150,9 @@ namespace ray {
    */
   template<int R, int C>
   std::ostream& operator<<(std::ostream& ostr, const matrix<R, C>& mat) {
-    for(int i = 0; i < mat.rows(); i++) {
+    for(int i = 0; i < R; i++) {
       ostr << "[ ";
-      for(int j = 0; j < mat.cols(); j++) {
+      for(int j = 0; j < C; j++) {
         ostr << std::setprecision(5) << std::setfill(' ') << std::setw(7)
              << mat[i][j] << " ";
       }

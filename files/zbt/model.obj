@@ -1,0 +1,22 @@
+# cube.obj
+# a cube, defined in terms of rectangles
+usemtl red
+g box1
+#1 2 3 4
+v -1.0 -1.0 0.0
+v -1 1 0
+v 1 1 0
+v 1 -1 0
+
+g box2
+#5 6 7 8
+v -1.0 -1.0 1
+v -1 1 1
+v 1 1 -1
+v 1 -1 -1
+
+
+g box1
+f 1 2 3 4
+g box2
+f 1 2 3 4

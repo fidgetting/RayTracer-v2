@@ -23,7 +23,7 @@ namespace ray {
     public:
 
       material() { }
-      ~material() { }
+      material(const obj::objstream::material& mat);
 
       inline std::string    name()    const { return _name;    }
       inline std::string&   name()          { return _name;    }
@@ -49,8 +49,8 @@ namespace ray {
   class light {
     public:
 
-      light() : _illumination(), _position() { }
-      ~light() { }
+      light(const obj::objstream::light& l) :
+        _illumination(l.illu()), _position(l.poss()) { }
 
       inline ray::vector  illumination() const { return _illumination; }
       inline ray::vector& illumination()       { return _illumination; }
@@ -146,7 +146,6 @@ namespace ray {
       inline const_reverse_iterator rend()   const { return _objects.rend();   }
 
       material& mat(const std::string& name);
-      const material& mat(const std::string& name) const;
 
     protected:
       std::vector<light>              _lights;

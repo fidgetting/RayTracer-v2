@@ -56,13 +56,21 @@ namespace ray {
       inline int&            vmax()       { return _vmax; }
       inline int             vmax() const { return _vmax; }
 
+      inline int  width() const { return _umax - _umin; }
+      inline int height() const { return _vmax - _vmin; }
+
       void translate(double amount, axis which);
       void rotate(double amount, ray::vector around, axis which);
       void draw_wire(model* m, cv::Mat& dst);
-      void vector_color(model* m);
+      void draw_proj(model* m, cv::Mat& dst, cv::Mat& zbuffer);
+
+      std::vector<ray::vector> point_color(model* m, polygon& p);
+      std::vector<std::vector<double> > point_z(const object& obj);
+
 
       void click(model* m, cv::Mat& dst);
       matrix<4, 4> projection() const;
+      matrix<4, 4> rotation() const;
 
 #ifdef DEBUG
       static bool print;
@@ -99,7 +107,7 @@ namespace ray {
         middle = 3,
       };
 
-      display(ray::model* m, ray::camera* cam);
+      display(ray::model* m, ray::camera* cam, bool wire = true);
       virtual ~display() { }
 
       void show();
@@ -117,12 +125,14 @@ namespace ray {
       ray::model*    _m;
       ray::camera*   _cam;
       ray::vector    _rot;
+      bool           _wire;
       int            last_x;
       int            last_y;
       struct timeval last_t;
       state_t        _state;
 
       cv::Mat image;
+      cv::Mat zbuffer;
   };
 
 }

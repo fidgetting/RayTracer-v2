@@ -115,6 +115,8 @@ namespace ray {
       virtual vector center()                const;
       virtual double radius()                const;
 
+      inline ray::object& owner() { return *_owner; }
+
       virtual std::tuple<vector, double, const surface*>
         intersection(const vector& U, const vector& L, const surface* skip)
         const;

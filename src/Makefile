@@ -12,10 +12,10 @@
 BIN_DIR = ../bin
 
 CXX     = g++
-CFLAGS  = -g -Wall -O3 -std=c++0x `pkg-config opencv --cflags`
+CFLAGS  = -g -Wall -std=c++0x `pkg-config opencv --cflags`
 INCPATH = -I. -I../obj -I../util
 EXE     = ../model
-LIBS    = `pkg-config opencv --libs` -L/usr/lib -lQtGui -lQtCore -lpthread
+LIBS    = `pkg-config opencv --libs` -L/usr/lib -lpthread
 
 OBJS = $(BIN_DIR)/model.o     \
        $(BIN_DIR)/surface.o   \
@@ -27,10 +27,10 @@ HEAD = Makefile               \
        model.h                \
        ray.h                  \
        camera.h               \
-       queue.tpp              \
        ../obj/objstream.hpp   \
        ../util/vector.h       \
        ../util/matrix.tpp     \
+       ../util/queue.tpp      \
 
 all: $(EXE)
 $(EXE): $(OBJS) $(BIN_DIR)/*.o $(HEAD)

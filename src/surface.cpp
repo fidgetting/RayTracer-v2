@@ -90,6 +90,7 @@ void ray::polygon::set_normal() {
     ray::vector b = (*_owner)[_indeces[1]];
     ray::vector c = (*_owner)[_indeces[2]];
     _n = (a - b).cross(c - b);
+    _n.normalize();
   }
 }
 

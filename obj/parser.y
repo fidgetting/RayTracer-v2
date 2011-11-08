@@ -44,7 +44,7 @@ void yyerror(const char* msg) {
 
 %token         ROTATE TRANSLATE SCALE ARBITRARY
 %token         VERTEX TEXTURE NORMAL
-%token         MATERIAL LIGHT SHADE USEMTL
+%token         MATERIAL LIGHT SHADER USEMTL
 %token         GROUP
 %token         FACE
 %token         SLASH
@@ -130,6 +130,29 @@ stmt:
       dest->cam($2) = c;
     }
     
+  | LIGHT NUM_LIT NUM_LIT NUM_LIT NUM_LIT NUM_LIT NUM_LIT NUM_LIT
+    {
+      objstream::light* l = new objstream::light();
+      
+      l->poss()[0] = atof($2); l->poss()[1] = atof($3);
+      l->poss()[2] = atof($4); l->poss()[3] = atof($5);
+      
+      l->illu()[0] = atof($6); l->illu()[1] = atof($7); l->illu()[2] = atof($8);
+      
+      dest->push_l(l);
+    }
+    
+  | MATERIAL STRING_LIT NUM_LIT NUM_LIT NUM_LIT NUM_LIT NUM_LIT
+    {
+      objstream::material m($2);
+      
+      m.rgb()[0] = atof($3); m.rgb()[1] = atof($4); m.rgb()[2] = atof($5);
+      m.s() = atof($6);
+      m.alpha() = atof($7);
+      
+      dest->mat($2) = m;
+    }
+    
   | WIREFRAME STRING_LIT NUM_LIT NUM_LIT NUM_LIT NUM_LIT
     {
       objstream::wireframe* w = new objstream::wireframe($2);
@@ -142,30 +165,16 @@ stmt:
       dest->push(w);
     }
     
-  | LIGHT NUM_LIT NUM_LIT NUM_LIT NUM_LIT NUM_LIT NUM_LIT NUM_LIT
+  | SHADER STRING_LIT NUM_LIT NUM_LIT NUM_LIT NUM_LIT
     {
-      objstream::light* l = new objstream::light();
+	  objstream::shader* s = new objstream::shader($2);
       
-      l->poss()[0] = $2; l->poss()[1] = $3; l->poss()[2] = $4; l->poss()[3] = $5;
-      l->illu()[0] = $6; l->illu()[1] = $7; l->illu()[2] = $8;
-      
-      dest->push_l(l);
-    }
+      s->minx() = atoi($3);
+      s->miny() = atoi($4);
+      s->maxx() = atoi($5);
+      s->maxy() = atoi($6);
     
-  | MATERIAL STRING_LIT NUM_LIT NUM_LIT NUM_LIT NUM_LIT NUM_LIT
-    {
-      objstream::material m($2);
-      
-      m.rgb()[0] = $3; m.rgb()[1] = $4; m.rgb()[2] = $5;
-      m.s() = $6;
-      m.alpha() = $7;
-      
-      dest->mat($2) = m;
-    }
-    
-  | SHADE STRING_LIT NUM_LIT NUM_LIT NUM_LIT NUM_LIT
-    {
-      /* do nothing */
+      dest->push(s);
     }
     
   | USEMTL STRING_LIT

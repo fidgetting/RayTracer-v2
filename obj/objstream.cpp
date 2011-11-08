@@ -143,6 +143,10 @@ obj::objstream::~objstream() {
   for(auto iter = _views.begin(); iter != _views.end(); iter++) {
     delete (*iter);
   }
+
+  for(auto iter = _lights.begin(); iter != _lights.end(); iter++) {
+    delete (*iter);
+  }
 }
 
 /**

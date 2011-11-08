@@ -268,6 +268,12 @@ namespace obj {
           virtual ~wireframe() { }
       };
 
+      class shader : public view {
+        public:
+          shader(const std::string& name) : view(name) { }
+          virtual ~shader() { }
+      };
+
       class camera {
         public:
 
@@ -313,6 +319,7 @@ namespace obj {
       class material {
         public:
 
+          material() : _name("") { }
           material(const std::string& name) : _name(name) { }
 
           inline std::string   name() const { return _name;  }
@@ -352,6 +359,24 @@ namespace obj {
       inline       reverse_iterator rend()         { return _groups.rend();   }
       inline const_reverse_iterator rbegin() const { return _groups.rbegin(); }
       inline const_reverse_iterator rend()   const { return _groups.rend();   }
+
+      typedef std::vector<light*> light_vec_t;
+      typedef light_vec_t::      iterator       l_iterator;
+      typedef light_vec_t::const_iterator l_const_iterator;
+
+      inline       l_iterator l_begin()       { return _lights.begin(); }
+      inline       l_iterator l_end()         { return _lights.end();   }
+      inline l_const_iterator l_begin() const { return _lights.begin(); }
+      inline l_const_iterator l_end()   const { return _lights.end();   }
+
+      typedef std::map<std::string, material> mat_map_t;
+      typedef mat_map_t::      iterator       m_iterator;
+      typedef mat_map_t::const_iterator m_const_iterator;
+
+      inline       m_iterator m_begin()       { return _materials.begin(); }
+      inline       m_iterator m_end()         { return _materials.end();   }
+      inline m_const_iterator m_begin() const { return _materials.begin(); }
+      inline m_const_iterator m_end()   const { return _materials.end();   }
 
       inline const std::string& src_file() const { return _fname;  }
       inline const std::string& mat_file() const { return _matlib; }
