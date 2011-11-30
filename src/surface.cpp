@@ -6,6 +6,7 @@
  */
 
 #include <surface.h>
+#include <camera.h>
 
 #include <algorithm>
 #include <cmath>
@@ -15,17 +16,9 @@ using std::get;
 
 int ray::surface::id_gen = 0;
 
-/**
- * Check if two spheres are close enough together that we can justify placing them under the
- * same super sphere. A Sphere is close to this sphere if the distance between their centers
- * is smaller than their summed radius's.
- *
- * @param oth the sphere to compare this sphere to
- * @return true if they are close, false otherwise
- */
-/*bool sphere::close(const sphere& oth) const {
-  return (oth.center().distance(center()) < oth.radius() + radius());
-}*/
+ray::vector ray::sphere::normal(const ray::vector& v) const {
+  return v - _center;
+}
 
 /**
  * Calculate the intersection between a ray and a sphere.
@@ -35,16 +28,20 @@ int ray::surface::id_gen = 0;
  * @param skip
  * @return
  */
-/*tuple<point, double, const surface*> sphere::intersection(const Vector<3>& U, const point& L, const surface* skip) const {
-  tuple<point, double, const surface*> i(point(0), numeric_limits<double>::infinity(), (const surface*)NULL), tmp;
+std::tuple<ray::vector, double, const ray::surface*>
+ray::sphere::intersection(const vector& U, const vector& L, const surface* skip) const {
+  std::tuple<ray::vector, double, const surface*> i, tmp;
   double s, t_sq, r_sq, m_sq, q;
-  Vector<3> T = center() - L;
+  ray::vector T = center() - L;
+
+  get<1>(i) = std::numeric_limits<double>::infinity();
+  get<2>(i) = NULL;
 
   if(skip == this && U.dot(normal(L)) > 0) {
     return i;
   }
 
-   TODO recomment: perform first check to see if we hit the circle
+  /* perform first check to see if we hit the circle */
   s = T.dot(U);
   t_sq = T.dot(T);
   r_sq = radius() * radius();
@@ -52,13 +49,13 @@ int ray::surface::id_gen = 0;
     return i;
   }
 
-   TODO recomment: second easy rejection check
+  /* second easy rejection check */
   m_sq = t_sq - s*s;
   if(m_sq > r_sq) {
     return i;
   }
 
-   TODO recomment: we now know that the ray will intersect the sphere, fork for subsurfaces
+  /* we now know that the ray will intersect the sphere, fork for subsurfaces */
   if(_subsurfaces.size() == 0) {
     q = sqrt(r_sq - m_sq);
     if(t_sq > r_sq && (this != skip || U.dot(normal(L)) >= 0)) {
@@ -67,10 +64,10 @@ int ray::surface::id_gen = 0;
       s += q;
     }
 
-    return tuple<point, double, const surface*>(L + s*U, s, this);
+    return std::tuple<ray::vector, double, const surface*>(L + (U * s), s, this);
   }
 
-   TODO recomment: this sphere does have subsurfaces, find the closest and return its intersection
+  /* this sphere does have subsurfaces, find the closest and return its intersection */
   for(auto iter = _subsurfaces.begin(); iter != _subsurfaces.end(); iter++) {
     if(*iter != skip) {
       tmp = (*iter)->intersection(U, L, skip);
@@ -82,7 +79,7 @@ int ray::surface::id_gen = 0;
   }
 
   return i;
-}*/
+}
 
 void ray::polygon::set_normal() {
   if(_indeces.size() > 2) {
@@ -121,28 +118,57 @@ ray::vector ray::polygon::normal(const vector& v) const {
 std::tuple<ray::vector, double, const ray::surface*>
 ray::polygon::intersection(const vector& U, const vector& L, const surface* skip) const {
   matrix<3, 4> m;
-  vector A, B, C;
+  vector A, B, C, u, v, n, w, I;
+  double r, a, b, uu, uv, vv, wu, wv, D, gama, beta;
 
-  A[0] = (*this)[0][0];
-  A[1] = (*this)[0][1];
-  A[2] = (*this)[0][2];
+  A = (*this)[*begin()];
 
   if(skip != this) {
-    for(int i = 1; i < size() - 1; i++) {
-      B = (*this)[i];
-      C = (*this)[i + 1];
+    auto s = this->end() - 1;
+    for(auto e = this->begin(); e != this->end(); e++) {
+      B = (*this)[*e];
+      C = (*this)[*s];
+      s = e;
 
-
-      m[0][0] = A[0] - B[0]; m[0][1] = A[0] - C[0]; m[0][2] = U[0]; m[0][3] = A[0] - L[0];
+      /*m[0][0] = A[0] - B[0]; m[0][1] = A[0] - C[0]; m[0][2] = U[0]; m[0][3] = A[0] - L[0];
       m[1][0] = A[1] - B[1]; m[1][1] = A[1] - C[1]; m[1][2] = U[1]; m[1][3] = A[1] - L[1];
       m[2][0] = A[2] - B[2]; m[2][1] = A[2] - C[2]; m[2][2] = U[2]; m[2][3] = A[2] - L[2];
       m.gaussian_elimination();
 
-      vector tmp = U * L;
       if(m[0][3] >= 0 && m[1][3] >= 0 && m[2][3] >= 0 && m[0][3] + m[1][3] < 1) {
         return std::tuple<ray::vector, double, const surface*>
-          (L + U, m[2][3], this);
-      }
+          (L + (U * m[2][3]), m[2][3], this);
+      }*/
+
+      u = B - A;
+      v = C - A;
+      n = u.cross(v);
+
+      a = -n.dot(L - A);
+      b =  n.dot(U);
+      if(fabs(b) < 0.00000001)
+        continue;
+
+      if((r = a / b) < 0.0)
+        continue;
+
+      I = L + (U * r);
+      uu = u.dot(u);
+      uv = u.dot(v);
+      vv = v.dot(v);
+      w = I - A;
+      wu = w.dot(u);
+      wv = w.dot(v);
+      D = uv * uv - uu * vv;
+
+      gama = (uv * wv - vv * wu) / D;
+      if(gama < 0.0 || gama > 1.0)
+        continue;
+      beta = (uv * wu - uu * wv) / D;
+      if(beta < 0.0 || (gama + beta) > 1.0)
+        continue;
+
+      return std::tuple<ray::vector, double, const surface*>(I, r, this);
     }
   }
 

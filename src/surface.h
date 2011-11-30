@@ -25,9 +25,9 @@ namespace ray {
       surface() : _id(id_gen++) { };
       virtual ~surface() { };
 
-      virtual vector normal(const vector& v) const = 0;
-      virtual vector center()                const = 0;
-      virtual double radius()                const = 0;
+      virtual ray::vector normal(const ray::vector& v) const = 0;
+      virtual ray::vector center()                     const = 0;
+      virtual double radius()                          const = 0;
 
       virtual std::tuple<vector, double, const surface*>
         intersection(const vector& U, const vector& L, const surface* skip)
@@ -48,43 +48,43 @@ namespace ray {
       static int id_gen;
   };
 
-  /*class sphere : public surface {
+  class sphere : public surface {
     public:
 
       typedef std::vector<surface*>::iterator iterator;
       typedef std::vector<surface*>::const_iterator const_iterator;
 
       sphere() { }
-      sphere(const point& _center, double _radius) : _center(_center), _radius(_radius) { }
-      virtual ~sphere() { for(auto iter = _subsurfaces.begin(); iter != _subsurfaces.end(); iter++) delete *iter; }
+      sphere(const ray::vector& _center, double _radius) :
+        _center(_center), _radius(_radius) { }
+      virtual ~sphere();
 
-      inline point& center() { return _center; }
-      inline double& radius() { return _radius; }
-      inline unsigned int size() { return _subsurfaces.size(); }
-      inline void clear() { _subsurfaces.clear(); }
-      inline void push_back(surface* s) { _subsurfaces.push_back(s); }
-      inline void insert(const iterator& pos, surface* s) { _subsurfaces.insert(pos, s); }
-      inline void insert(const iterator& s, const iterator& e) { _subsurfaces.insert(end(), s, e); }
-      bool close(const sphere& oth) const;
+      inline ray::vector& center()       { return _center; }
+      inline ray::vector  center() const { return _center; }
+      inline double&      radius()       { return _radius; }
+      inline double       radius() const { return _radius; }
+
+      inline unsigned int size()  const { return _subsurfaces.size();  }
+      inline void         clear()       {        _subsurfaces.clear(); }
+      inline void push_back(surface* s) { _subsurfaces.push_back(s);   }
 
       inline       iterator begin()       { return _subsurfaces.begin(); }
       inline       iterator end()         { return _subsurfaces.end();   }
       inline const_iterator begin() const { return _subsurfaces.begin(); }
       inline const_iterator end()   const { return _subsurfaces.end();   }
 
-      virtual inline vector<3> normal(const vector<3>& v) const { return v - _center; }
-      virtual inline point     center()                   const { return _center; }
-      virtual inline double    radius()                   const { return _radius; }
+      virtual ray::vector normal(const ray::vector& v) const;
 
-      virtual std::tuple<point, double, const surface*>
-      intersection(const vector<3>& ray, const point& src, const surface* skip) const;
+      virtual std::tuple<vector, double, const surface*>
+        intersection(const vector& U, const vector& L, const surface* skip)
+        const;
 
     protected:
 
-      point                 _center;       ///< the index of the center of the sphere within a shape
-      double                _radius;       ///< the radius of the sphere
-      std::vector<surface*> _subsurfaces;  ///< list of surfaces that are contained within this sphere
-  };*/
+      ray::vector           _center;
+      double                _radius;
+      std::vector<surface*> _subsurfaces;
+  };
 
   class polygon : public surface {
     public:
@@ -130,9 +130,5 @@ namespace ray {
       ray::object*     _owner;
   };
 }
-
-/*inline bool operator==(const ray::sphere& lhs, const ray::sphere& rhs) {
-  return lhs.center() == rhs.center() && lhs.radius() == rhs.radius();
-}*/
 
 #endif /* SURFACE_H_INCLUDE */

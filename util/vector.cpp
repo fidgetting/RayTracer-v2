@@ -7,52 +7,24 @@
 
 #include <vector.h>
 
-ray::vector::vector(double d) : data(NULL), del(true) {
-  data = new double[V_SIZE];
-  memset(data, 0, V_SIZE * sizeof(double));
+#include <sstream>
+
+ray::vector::vector(double d) {
   data[0] = d;
   data[1] = d;
   data[2] = d;
   data[3] = 1.0;
 }
 
-ray::vector::vector(double x, double y, double z) : data(NULL), del(true) {
-  data = new double[V_SIZE];
+ray::vector::vector(double x, double y, double z) {
   data[0] = x;
   data[1] = y;
   data[2] = z;
   data[3] = 1.0;
 }
 
-ray::vector::vector(const vector& cpy) : data(cpy.data), del(cpy.del) {
-  if(cpy.del) {
-    data = new double[V_SIZE];
-    del = cpy.del;
-    memcpy(data, cpy.data, V_SIZE * sizeof(double));
-  }
-}
-
-ray::vector::~vector() {
-  if(del) delete[] data;
-}
-
-/**
- * assignment operator for the vector class
- *
- * @param asn
- * @return
- */
-const ray::vector& ray::vector::operator=(const vector& asn) {
-  if(del) delete[] data;
-
-  del  = asn.del;
-  data = asn.data;
-  if(del) {
-    data = new double[V_SIZE];
-    memcpy(data, asn.data, V_SIZE * sizeof(double));
-  }
-
-  return asn;
+ray::vector::vector(double* d) {
+  memcpy(data, d, V_SIZE * sizeof(double));
 }
 
 /**
@@ -227,6 +199,21 @@ ray::vector ray::vector::operator*(double rhs) const {
 }
 
 /**
+ * output operator for the vector class
+ *
+ * @param ostr
+ * @param v
+ * @return
+ */
+std::string ray::vector::str() const {
+  std::ostringstream ostr;
+  ostr << "v ";
+  for(int i = 0; i < V_SIZE; i++)
+    ostr << data[i] << " ";
+  return ostr.str();
+}
+
+/**
  * checks if two vectors are equal
  *
  * @param lhs left hand side of operator
@@ -283,20 +270,6 @@ ray::vector operator+(const ray::vector& lhs, const ray::vector& rhs) {
   }
 
   return ret;
-}
-
-/**
- * output operator for the vector class
- *
- * @param ostr
- * @param v
- * @return
- */
-std::ostream& operator<<(std::ostream& ostr, const ray::vector& v) {
-  ostr << "v ";
-  for(int i = 0; i < V_SIZE; i++)
-    ostr << v[i] << " ";
-  return ostr;
 }
 
 

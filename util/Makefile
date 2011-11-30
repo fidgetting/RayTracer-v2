@@ -24,7 +24,7 @@ HEAD = Makefile               \
 
 all: $(OBJS)
 
-debug: clean
+debug:
 	$(MAKE) all DEF=-DDEBUG
 
 $(OBJS) : $(BIN_DIR)/%.o : %.cpp $(HEAD)

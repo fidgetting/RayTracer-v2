@@ -22,6 +22,8 @@
 #include <cxcore.h>
 #include <highgui.h>
 
+//#define DEBUG
+
 namespace ray {
 
   class camera {
@@ -128,6 +130,7 @@ namespace ray {
       bool           _wire;
       int            last_x;
       int            last_y;
+      int            dir;
       struct timeval last_t;
       state_t        _state;
 

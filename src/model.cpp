@@ -327,7 +327,7 @@ std::ostream& operator<<(std::ostream& ostr, const ray::model& m) {
  */
 std::ostream& operator<<(std::ostream& ostr, const ray::object& o) {
   for(unsigned int i = 0; i < o.size(); i++) {
-    ostr << o[i] << "\n";
+    ostr << o[i].str() << "\n";
   }
   ostr << "\n";
 
@@ -364,22 +364,21 @@ int main(int argc, char** argv) {
     ray::camera c(cmd.cam(cmd[i]->name()));
     std::ostringstream ostr;
 
-    if(dynamic_cast<obj::objstream::wireframe*>(cmd[i]) != NULL) {
-      c.umin() = cmd[i]->minx();
-      c.umax() = cmd[i]->maxx();
-      c.vmin() = cmd[i]->miny();
-      c.vmax() = cmd[i]->maxy();
+    c.umin() = cmd[i]->minx();
+    c.umax() = cmd[i]->maxx();
+    c.vmin() = cmd[i]->miny();
+    c.vmax() = cmd[i]->maxy();
 
+    if(cmd[i]->type() == obj::objstream::view::wireframe) {
       ray::display disp(&m, &c);
       disp.exec();
-    } else {
-      c.umin() = cmd[i]->minx();
-      c.umax() = cmd[i]->maxx();
-      c.vmin() = cmd[i]->miny();
-      c.vmax() = cmd[i]->maxy();
-
+    } else if(cmd[i]->type() == obj::objstream::view::shader){
       ray::display disp(&m, &c, false);
       disp.exec();
+    } else {
+      cv::Mat image(c.height(), c.width(), CV_8UC3);
+      //c.draw_wire(&m, image);
+      c.click(&m, image);
     }
   }
 

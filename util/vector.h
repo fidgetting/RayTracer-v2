@@ -9,6 +9,7 @@
 #define VECTOR_TPP_INCLUDE
 
 #include <iostream>
+#include <string>
 #include <cstring>
 #include <cmath>
 
@@ -24,19 +25,14 @@ namespace ray {
 
       vector(double d = 0);
       vector(double x, double y, double z);
-      vector(double* d) : data(d), del(false) { }
-      vector(const vector& cpy);
-      ~vector();
-
-      const vector& operator=(const vector& asn);
+      vector(double* d);
 
       /* ********** getters and setters ********** */
       inline double& operator[](int i)       { return data[i]; }
       inline double  operator[](int i) const { return data[i]; }
       inline int     size()            const { return V_SIZE;  }
       inline void    clear() { std::memset(data, 0, V_SIZE * sizeof(double)); }
-      inline double* ptr() const { return data; }
-      inline bool    own() const { return del;  }
+      inline const double* ptr() const { return data; }
 
       inline       iterator begin()       { return data;          }
       inline       iterator end()         { return data + V_SIZE; }
@@ -58,9 +54,10 @@ namespace ray {
       vector  operator*(const vector& rhs) const;
       vector  operator*(double d)          const;
 
+      std::string str() const;
+
     protected:
-      double* data;
-      bool    del;
+      double  data[V_SIZE];
   };
 }
 
@@ -69,7 +66,5 @@ bool operator!=(const ray::vector& lhs, const ray::vector& rhs);
 
 ray::vector operator-(const ray::vector& lhs, const ray::vector& rhs);
 ray::vector operator+(const ray::vector& lhs, const ray::vector& rhs);
-
-std::ostream& operator<<(std::ostream& ostr, const ray::vector& v);
 
 #endif /* VECTOR_TPP_INCLUDE */

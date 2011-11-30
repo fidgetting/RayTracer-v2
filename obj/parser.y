@@ -45,7 +45,7 @@ void yyerror(const char* msg) {
 
 %token         ROTATE TRANSLATE SCALE ARBITRARY
 %token         VERTEX TEXTURE NORMAL
-%token         MATERIAL LIGHT SHADER USEMTL
+%token         MATERIAL LIGHT SHADER TRACER USEMTL
 %token         GROUP
 %token         FACE
 %token         SLASH
@@ -161,26 +161,44 @@ stmt:
     
   | WIREFRAME STRING_LIT NUM_LIT NUM_LIT NUM_LIT NUM_LIT
     {
-      objstream::wireframe* w = new objstream::wireframe($2);
+      objstream::view* w = new objstream::view($2);
       
       w->minx() = atoi($3);
       w->miny() = atoi($4);
       w->maxx() = atoi($5);
       w->maxy() = atoi($6);
+      
+      w->type() = objstream::view::wireframe;
     
       dest->push(w);
     }
     
   | SHADER STRING_LIT NUM_LIT NUM_LIT NUM_LIT NUM_LIT
     {
-	  objstream::shader* s = new objstream::shader($2);
+	  objstream::view* s = new objstream::view($2);
       
       s->minx() = atoi($3);
       s->miny() = atoi($4);
       s->maxx() = atoi($5);
       s->maxy() = atoi($6);
+      
+      s->type() = objstream::view::shader;
     
       dest->push(s);
+    }
+    
+  | TRACER STRING_LIT NUM_LIT NUM_LIT NUM_LIT NUM_LIT
+    {
+      objstream::view* t = new objstream::view($2);
+      
+      t->minx() = atoi($3);
+      t->miny() = atoi($4);
+      t->maxx() = atoi($5);
+      t->maxy() = atoi($6);
+      
+      t->type() = objstream::view::tracer;
+      
+      dest->push(t);
     }
     
   | USEMTL STRING_LIT

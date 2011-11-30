@@ -24,12 +24,11 @@ bool ray::l_ray::operator()() {
   }
 #endif
   _pixel = _pixel + color();
-  _pixel[0] = std::min(int(_pixel[0]), 255);
-  _pixel[1] = std::min(int(_pixel[1]), 255);
-  _pixel[2] = std::min(int(_pixel[2]), 255);
 
-  return !(_cont < 0.0039 || _depth > MAX_DEPTH ||
-      (_pixel[0] == 255 && _pixel[1] == 255 && _pixel[2] == 255));
+  if(!(_cont < 0.0039 || _depth > MAX_DEPTH ||
+      (_pixel[0] == 255 && _pixel[1] == 255 && _pixel[2] == 255)))
+    return this->operator ()();
+  return false;
 }
 
 ray::vector ray::l_ray::color() {
@@ -39,6 +38,10 @@ ray::vector ray::l_ray::color() {
   for(auto iter = _m->begin(); iter != _m->end(); iter++) {
     for(auto oi = iter->second->begin(); oi != iter->second->end(); oi++) {
       t = oi->intersection(_direction, _src_point, _src);
+
+      /*if(camera::print) {
+        std::cout << "i: " << get<1>(i) << " t: " << get<1>(t) << std::endl;
+      }*/
 
       if(get<1>(t) > 0 && get<1>(t) < get<1>(i)) {
         i = t;
@@ -129,9 +132,9 @@ bool ray::l_ray::shadowed(const ray::vector& pt, const ray::vector& U,
 cv::Vec<uc, 3> operator+(const cv::Vec<uc, 3>& rhs, const ray::vector& lhs) {
   cv::Vec<uc, 3> ret;
 
-  ret[0] = rhs[0] + lhs[0];
-  ret[1] = rhs[1] + lhs[1];
-  ret[2] = rhs[2] + lhs[2];
+  ret[2] = std::min(255, int(rhs[2] + lhs[0]));
+  ret[1] = std::min(255, int(rhs[1] + lhs[1]));
+  ret[0] = std::min(255, int(rhs[0] + lhs[2]));
 
   return ret;
 }

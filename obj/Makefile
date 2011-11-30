@@ -27,7 +27,7 @@ HEAD = objstream.hpp \
 
 all: $(OBJS)
 
-debug: clean
+debug:
 	$(MAKE) all DEF=-DDEBUG
 
 parser.cpp: parser.y $(HEAD)

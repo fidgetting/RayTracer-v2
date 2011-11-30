@@ -243,37 +243,34 @@ namespace obj {
       class view {
         public:
 
+    	  enum types {
+    		  wireframe,
+    		  shader,
+    		  tracer
+    	  };
+
           view(const std::string& name) : _name(name) { }
           virtual ~view() { }
 
           inline std::string name() const { return _name; }
 
-          inline int  minx() const { return _minx; }
-          inline int& minx()       { return _minx; }
-          inline int  miny() const { return _miny; }
-          inline int& miny()       { return _miny; }
-          inline int  maxx() const { return _maxx; }
-          inline int& maxx()       { return _maxx; }
-          inline int  maxy() const { return _maxy; }
-          inline int& maxy()       { return _maxy; }
+          inline int    minx() const { return _minx; }
+          inline int&   minx()       { return _minx; }
+          inline int    miny() const { return _miny; }
+          inline int&   miny()       { return _miny; }
+          inline int    maxx() const { return _maxx; }
+          inline int&   maxx()       { return _maxx; }
+          inline int    maxy() const { return _maxy; }
+          inline int&   maxy()       { return _maxy; }
+          inline types  type() const { return _type; }
+          inline types& type()       { return _type; }
 
         protected:
 
           std::string _name;
           int _minx, _miny;
           int _maxx, _maxy;
-      };
-
-      class wireframe : public view {
-        public:
-          wireframe(const std::string& name) : view(name) { }
-          virtual ~wireframe() { }
-      };
-
-      class shader : public view {
-        public:
-          shader(const std::string& name) : view(name) { }
-          virtual ~shader() { }
+          types _type;
       };
 
       class camera {
