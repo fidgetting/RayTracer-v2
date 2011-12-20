@@ -17,7 +17,10 @@
 
 namespace ray {
 
-  class polygon;
+  class surface;
+  class s_tree;
+  class triangle;
+  class sphere;
 
   class material {
     public:
@@ -33,8 +36,6 @@ namespace ray {
       inline double&        alpha()         { return _alpha;   }
       inline double         kt()      const { return _kt;      }
       inline double&        kt()            { return _kt;      }
-      inline double         density() const { return _density; }
-      inline double&        density()       { return _density; }
       inline matrix<4, 4>   diffuse() const { return _diffuse; }
       inline matrix<4, 4>&  diffuse()       { return _diffuse; }
 
@@ -42,7 +43,7 @@ namespace ray {
 
       std::string  _name;
       double       _ks, _alpha;
-      double       _kt, _density;
+      double       _kt;
       matrix<4, 4> _diffuse;
   };
 
@@ -68,10 +69,6 @@ namespace ray {
   class object {
     public:
 
-      typedef std::vector<polygon> poly_t;
-      typedef poly_t::      iterator       iterator;
-      typedef poly_t::const_iterator const_iterator;
-
       object();
       object(const object& obj);
       virtual ~object();
@@ -79,35 +76,31 @@ namespace ray {
       const object& operator=(const object& obj);
 
       void push_vector(const obj::objstream::vertex& v);
-      void push_polygon(const ray::polygon& p);
+      void push_normal(const obj::objstream::vertex& n);
 
       unsigned int index(const vector& v) const;
-      void alter_normal(const vector& v, int i);
 
       inline const vector operator[](int i) const { return ray::vector(&_data[i * V_SIZE]); }
-      inline       vector operator[](int i)       { return ray::vector(&_data[i * V_SIZE]); }
+      inline const double*        at(int i) const { return &_data[i * V_SIZE]; }
+      inline       double*        at(int i)       { return &_data[i * V_SIZE]; }
 
-      inline const double*         at(int i) const { return &_data[i * V_SIZE]; }
-      inline       double*         at(int i)       { return &_data[i * V_SIZE]; }
+      inline unsigned int     size() const { return _size;        }
+      inline unsigned int   n_size() const { return _norm.size(); }
+      inline unsigned int capacity() const { return _capa;        }
 
-      inline unsigned int     size() const { return _size; }
-      inline unsigned int capacity() const { return _capa; }
+      inline       ray::s_tree* root()       { return _root; }
+      inline const ray::s_tree* root() const { return _root; }
 
       inline vector  norm(int idx) const { return _norm[idx]; }
       inline vector& norm(int idx)       { return _norm[idx]; }
 
       void operator*=(const ray::matrix<4, 4>& mat);
 
-      inline       iterator begin()       { return _surf.begin(); }
-      inline       iterator end()         { return _surf.end();   }
-      inline const_iterator begin() const { return _surf.begin(); }
-      inline const_iterator end()   const { return _surf.end();   }
-
     protected:
-      double*                  _data;
-      unsigned int             _size;
-      unsigned int             _capa;
-      poly_t                   _surf;
+      double*  _data;
+      uint32_t _size;
+      uint32_t _capa;
+      ray::s_tree* _root;
       std::vector<ray::vector> _norm;
   };
 
@@ -147,16 +140,15 @@ namespace ray {
 
       material& mat(const std::string& name);
 
+      static bool smooth_shading;
+      static int  vertex_spheres;
+
     protected:
       std::vector<light>              _lights;
       std::vector<int>                _illumination;
       std::map<std::string, object*>  _objects;
       std::map<std::string, material> _materials;
   };
-
 }
-
-std::ostream& operator<<(std::ostream& ostr, const ray::model& m);
-std::ostream& operator<<(std::ostream& ostr, const ray::object& o);
 
 #endif /* MODEL_H_ */

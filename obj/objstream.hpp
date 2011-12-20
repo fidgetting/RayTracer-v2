@@ -329,12 +329,14 @@ namespace obj {
           inline double&          s()       { return _s;     }
           inline double       alpha() const { return _alpha; }
           inline double&      alpha()       { return _alpha; }
+          inline double           t() const { return _t;     }
+          inline double&          t()       { return _t;     }
 
         private:
 
           std::string _name;
           ray::vector _rgb;
-          double _s, _alpha;
+          double _s, _alpha, _t;
       };
 
       /* ******************************************************************** */

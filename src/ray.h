@@ -10,7 +10,6 @@
 
 #include <iostream>
 #include <vector.h>
-#include <surface.h>
 
 #define MAX_DEPTH 700
 
@@ -24,6 +23,7 @@ typedef unsigned char uc;
 namespace ray {
 
   class camera;
+  class surface;
 
   class l_ray {
     public:

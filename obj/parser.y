@@ -148,13 +148,14 @@ stmt:
       dest->push_l(l);
     }
     
-  | MATERIAL STRING_LIT NUM_LIT NUM_LIT NUM_LIT NUM_LIT NUM_LIT
+  | MATERIAL STRING_LIT NUM_LIT NUM_LIT NUM_LIT NUM_LIT NUM_LIT NUM_LIT
     {
       objstream::material m($2);
       
       m.rgb()[0] = atof($3); m.rgb()[1] = atof($4); m.rgb()[2] = atof($5);
       m.s() = atof($6);
-      m.alpha() = atof($7); 
+      m.t() = atof($8);
+      m.alpha() = atof($7);
       
       dest->mat($2) = m;
     }

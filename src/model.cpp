@@ -15,12 +15,15 @@
 #include <cstring>
 #include <iostream>
 
+bool ray::model::smooth_shading;
+int  ray::model::vertex_spheres;
+
 /**
  * Creates a material based upon the material read from the input file
  */
 ray::material::material(const obj::objstream::material& mat) :
-    _name(mat.name()), _ks(mat.s()), _alpha(mat.alpha()), _kt(0),
-    _density(0), _diffuse(ray::identity<4>()) {
+    _name(mat.name()), _ks(mat.s()), _alpha(mat.alpha()), _kt(mat.t()),
+    _diffuse(ray::identity<4>()) {
   _diffuse[0][0] = mat.rgb()[0];
   _diffuse[1][1] = mat.rgb()[1];
   _diffuse[2][2] = mat.rgb()[2];
@@ -48,7 +51,8 @@ ray::vector ray::light::direction(ray::vector src) const {
 /**
  * TODO
  */
-ray::object::object() : _data(new double[4]), _size(0), _capa(1), _surf() { }
+ray::object::object() :
+    _data(new double[4]), _size(0), _capa(1), _root(new ray::s_tree()) { }
 
 /**
  * TODO
@@ -57,7 +61,7 @@ ray::object::object() : _data(new double[4]), _size(0), _capa(1), _surf() { }
  */
 ray::object::object(const object& obj) :
         _data(new double[obj._capa * 4]), _size(obj._size), _capa(obj._capa),
-        _surf(obj._surf) {
+        _root(new ray::s_tree()) {
   memcpy(_data, obj._data, _capa * 4 * sizeof(double));
 }
 
@@ -66,6 +70,7 @@ ray::object::object(const object& obj) :
  */
 ray::object::~object() {
   delete[] _data;
+  delete   _root;
 }
 
 /**
@@ -81,20 +86,11 @@ const ray::object& ray::object::operator =(const ray::object& obj) {
     _data = new double[obj._capa * V_SIZE];
     _size = obj._size;
     _capa = obj._capa;
-    _surf = obj._surf;
+    _root = obj._root;
     memcpy(_data, obj._data, _capa * V_SIZE * sizeof(double));
   }
 
   return obj;
-}
-
-/**
- * TODO
- *
- * @param p
- */
-void ray::object::push_polygon(const ray::polygon& p) {
-  _surf.push_back(p);
 }
 
 /**
@@ -105,30 +101,6 @@ void ray::object::push_polygon(const ray::polygon& p) {
  */
 unsigned int ray::object::index(const vector& v) const {
   return v.ptr() - _data;
-}
-
-/**
- * TODO
- *
- * @param v
- * @param i
- */
-void ray::object::alter_normal(const vector& v, int i) {
-  ray::vector& dest = norm(i);
-
-  dest[0] *= dest[3];
-  dest[1] *= dest[3];
-  dest[2] *= dest[3];
-
-  dest[0] += v[0];
-  dest[1] += v[1];
-  dest[2] += v[2];
-
-  dest[3]++;
-
-  dest[0] /= dest[3];
-  dest[1] /= dest[3];
-  dest[2] /= dest[3];
 }
 
 /**
@@ -162,8 +134,15 @@ void ray::object::push_vector(const obj::objstream::vertex& v) {
     _data[idx + 3] /= _data[idx + 3];
   }
   _size++;
+}
 
-  _norm.push_back(ray::vector());
+/**
+ * TODO
+ *
+ * @param n
+ */
+void ray::object::push_normal(const obj::objstream::vertex& n) {
+  _norm.push_back(ray::vector(n.x(), n.y(), n.z()));
 }
 
 /**
@@ -201,34 +180,47 @@ ray::model::~model() { }
 void ray::model::build(const obj::objstream& src) {
   typedef obj::objstream src_t;
 
+  ray::triangle* t;
+  int size;
+
   for(src_t::const_iterator iter = src.begin(); iter != src.end(); iter++) {
     object* obj = new object();
+
+    if((size = iter->second.n_size()) == 0) {
+      model::smooth_shading = false;
+    }
 
     for(src_t::group::vertex_iterator vi = iter->second.vert_begin();
         vi != iter->second.vert_end(); vi++) {
       obj->push_vector(*vi);
     }
 
-    for(src_t::group::face_iterator fi = iter->second.face_begin();
-        fi != iter->second.face_end(); fi++) {
-      polygon p(obj);
-      p.material() = fi->mat();
-
-      for(src_t::face::iterator ii = fi->v_begin(); ii != fi->v_end(); ii++) {
-        p.add_vertex(*ii);
-      }
-
-      p.set_normal();
-      p.id = fi->id;
-      obj->push_polygon(p);
-
-      for(polygon::iterator pi = p.begin(); pi != p.end(); pi++) {
-        obj->alter_normal(p.normal(), *pi);
-      }
+    for(src_t::group::normal_iterator ni = iter->second.norm_begin();
+        ni != iter->second.norm_end(); ni++) {
+      obj->push_normal(*ni);
+      obj->norm(obj->n_size() - 1).normalize();
     }
 
-    for(unsigned int i = 0; i < obj->size(); i++) {
-      obj->norm(i).normalize();
+    for(src_t::group::face_iterator fi = iter->second.face_begin();
+        fi != iter->second.face_end(); fi++) {
+      src_t::face::iterator avi = fi->v_begin();
+      src_t::face::iterator bvi = fi->v_begin() + 1;
+      src_t::face::iterator cvi = fi->v_begin() + 2;
+      src_t::face::iterator ani = fi->n_begin();
+      src_t::face::iterator bni = fi->n_begin() + 1;
+      src_t::face::iterator cni = fi->n_begin() + 2;
+
+      while(cvi != fi->v_end()) {
+        if(size == 0) t = new ray::triangle(*avi, *bvi, *cvi, 0, 0, 0, *obj);
+        else t = new ray::triangle(*avi, *bvi, *cvi, *ani, *bni, *cni, *obj);
+
+        t->material() = fi->mat();
+        obj->root()->push(t);
+
+        if(size != 0)
+          bni++; cni++;
+        bvi++; cvi++;
+      }
     }
 
     _objects[iter->first] = obj;
@@ -243,6 +235,15 @@ void ray::model::build(const obj::objstream& src) {
 void ray::model::cmd(const obj::objstream& src) {
   typedef obj::objstream src_t;
 
+  if(vertex_spheres) {
+    obj::objstream::material mat;
+    mat.name() = "vertex_sphere_color";
+    mat.rgb() = ray::vector(0, 0.5, 0);
+    mat.s() = 0.49;
+    mat.alpha() = 168;
+    _materials["vertex_sphere_color"] = mat;
+  }
+
   for(src_t::const_iterator iter = src.begin(); iter != src.end(); iter++) {
     object& obj = *_objects[iter->first];
     ray::matrix<4, 4> tran = ray::identity<4>();
@@ -253,6 +254,17 @@ void ray::model::cmd(const obj::objstream& src) {
     }
 
     obj *= tran;
+
+    if(vertex_spheres) {
+      for(unsigned int i = 0; i < obj.size(); i++) {
+        ray::sphere* s = new ray::sphere(obj[i], model::vertex_spheres);
+        s->material() = "vertex_sphere_color";
+        obj.root()->push(s);
+      }
+    }
+
+    obj.root()->split();
+    obj.root()->compute_bbox();
   }
 
   for(src_t::l_const_iterator iter = src.l_begin(); iter != src.l_end(); iter++) {
@@ -295,94 +307,6 @@ ray::material& ray::model::mat(const std::string& name) {
   if(_materials.find(name) == _materials.end())
     throw std::exception();
   return _materials[name];
-}
-
-/**
- * TODO
- *
- * @param ostr
- * @param m
- * @return
- */
-std::ostream& operator<<(std::ostream& ostr, const ray::model& m) {
-  ostr << "# output.obj" << std::endl;
-  ostr << "# "           << std::endl;
-  ostr << "# file generated for ray tracer" << std::endl;
-  ostr << "# ray tracer written by Alex Norton" << std::endl << std::endl;
-
-  for(ray::model::const_iterator iter = m.begin(); iter != m.end(); iter++) {
-    ostr << "g " << iter->first << "\n\n";
-    ostr << *(iter->second) << "\n";
-  }
-
-  return ostr << std::endl;
-}
-
-/**
- * TODO
- *
- * @param ostr
- * @param o
- * @return
- */
-std::ostream& operator<<(std::ostream& ostr, const ray::object& o) {
-  for(unsigned int i = 0; i < o.size(); i++) {
-    ostr << o[i].str() << "\n";
-  }
-  ostr << "\n";
-
-  for(ray::object::const_iterator iter = o.begin(); iter != o.end(); iter++) {
-    ostr << "f ";
-    for(ray::polygon::const_iterator pi = iter->begin(); pi != iter->end(); pi++) {
-      ostr << *pi << " ";
-    }
-    ostr << "\n";
-  }
-
-  return ostr << std::endl;
-}
-
-/* ************************************************************************** */
-/* *** main function for ray tracer ***************************************** */
-/* ************************************************************************** */
-
-int main(int argc, char** argv) {
-
-  if(argc != 3) {
-    std::cout << "usage: " << argv[0] << " [transforms] [objects]" << std::endl;
-    return -1;
-  }
-
-  obj::objstream obj(argv[2]);
-  obj::objstream cmd(argv[1]);
-  ray::model m;
-
-  m.build(obj);
-  m.cmd(cmd);
-
-  for(int i = 0;i < cmd.size(); i++) {
-    ray::camera c(cmd.cam(cmd[i]->name()));
-    std::ostringstream ostr;
-
-    c.umin() = cmd[i]->minx();
-    c.umax() = cmd[i]->maxx();
-    c.vmin() = cmd[i]->miny();
-    c.vmax() = cmd[i]->maxy();
-
-    if(cmd[i]->type() == obj::objstream::view::wireframe) {
-      ray::display disp(&m, &c);
-      disp.exec();
-    } else if(cmd[i]->type() == obj::objstream::view::shader){
-      ray::display disp(&m, &c, false);
-      disp.exec();
-    } else {
-      cv::Mat image(c.height(), c.width(), CV_8UC3);
-      //c.draw_wire(&m, image);
-      c.click(&m, image);
-    }
-  }
-
-  return 0;
 }
 
 

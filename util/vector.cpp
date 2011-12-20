@@ -199,6 +199,22 @@ ray::vector ray::vector::operator*(double rhs) const {
 }
 
 /**
+ * element wise division by a scalar
+ *
+ * @params rhs the double to divide by
+ * @return a new vector
+ */
+ray::vector ray::vector::operator/(double rhs) const {
+  ray::vector ret;
+
+  for(int i = 0; i < V_SIZE - 1; i++) {
+    ret[i] = data[i] / rhs;
+  }
+
+  return ret;
+}
+
+/**
  * output operator for the vector class
  *
  * @param ostr
@@ -207,7 +223,6 @@ ray::vector ray::vector::operator*(double rhs) const {
  */
 std::string ray::vector::str() const {
   std::ostringstream ostr;
-  ostr << "v ";
   for(int i = 0; i < V_SIZE; i++)
     ostr << data[i] << " ";
   return ostr.str();

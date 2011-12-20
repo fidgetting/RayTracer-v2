@@ -22,11 +22,13 @@ using std::get;
 #include <condition_variable>
 #include <mutex>
 
-#define X_PRINT 0
-#define Y_PRINT 0
-
 #define WIND "render"
 #define ZBUF "zbuffer"
+
+int ray::camera::x_print = 0;
+int ray::camera::y_print = 0;
+
+bool ray::camera::animation = false;
 
 #ifdef DEBUG
 bool ray::camera::print = false;
@@ -34,10 +36,6 @@ bool ray::camera::print = false;
 int ray::camera::running = 0;
 
 ray::concurrent_queue<ray::l_ray> rays;
-std::condition_variable_any wait_on;
-std::mutex                  lock_on;
-unsigned int                numb_on;
-int                         block_on;
 
 void wrapper() {
   rays.worker();
@@ -52,7 +50,7 @@ void wrapper() {
  * @param src
  */
 ray::camera::camera(const obj::objstream::camera& src) :
-    _fp(src.fp()), _n(src.vpn()), _u(src.vup().cross(src.vpn())), _fl(src.d()) {
+    _fp(src.fp()), _n(src.vpn()), _u(src.vup().cross(src.vpn())), _fl(-src.d()) {
   _v = _n.cross(_u);
 
   _n.normalize();
@@ -147,7 +145,7 @@ void ray::camera::rotate(double amount, ray::vector around, axis which) {
  * @param dst
  */
 void ray::camera::draw_wire(model* m, cv::Mat& dst) {
-  ray::matrix<4, 4> proj = projection();
+  /*ray::matrix<4, 4> proj = projection();
   ray::matrix<4, 4> rota = rotation();
 
   for(auto iter = m->begin(); iter != m->end(); iter++) {
@@ -164,8 +162,8 @@ void ray::camera::draw_wire(model* m, cv::Mat& dst) {
     }
 
     for(auto oi = obj.begin(); oi != obj.end(); oi++) {
-      auto s = oi->end() - 1;
-      for(auto e = oi->begin(); e != oi->end(); e++) {
+      auto s = (*oi)->end() - 1;
+      for(auto e = (*oi)->begin(); e != (*oi)->end(); e++) {
         cv::line(dst,
             cv::Point(obj.at(*s)[0], obj.at(*s)[1]),
             cv::Point(obj.at(*e)[0], obj.at(*e)[1]),
@@ -173,7 +171,7 @@ void ray::camera::draw_wire(model* m, cv::Mat& dst) {
         s = e;
       }
     }
-  }
+  }*/
 }
 
 /**
@@ -184,7 +182,7 @@ void ray::camera::draw_wire(model* m, cv::Mat& dst) {
  * @param zbuffer
  */
 void ray::camera::draw_proj(model* m, cv::Mat& dst, cv::Mat& zbuffer) {
-  int x_limits[2], j, idx_s, idx_e, idx_f;
+  /*int x_limits[2], j, idx_s, idx_e, idx_f;
   double rl[2], gl[2], bl[2], zl[2], za, zb;
   unsigned int i;
   double ymin, ymax;
@@ -212,12 +210,12 @@ void ray::camera::draw_proj(model* m, cv::Mat& dst, cv::Mat& zbuffer) {
 
     idx_f = 0;
     for(auto oi = obj.begin(); oi != obj.end(); oi++, idx_f++) {
-      std::vector<ray::vector> color = point_color(m, *oi);
+      std::vector<ray::vector> color = point_color(m, **oi);
 
       ymin = std::numeric_limits<double>::max();
       ymax = std::numeric_limits<double>::min();
 
-      for(auto pi = oi->begin(); pi != oi->end(); pi++) {
+      for(auto pi = (*oi)->begin(); pi != (*oi)->end(); pi++) {
         if(obj.at(*pi)[1] < ymin) ymin = std::ceil (obj.at(*pi)[1]);
         if(obj.at(*pi)[1] > ymax) ymax = std::floor(obj.at(*pi)[1]);
       }
@@ -229,10 +227,10 @@ void ray::camera::draw_proj(model* m, cv::Mat& dst, cv::Mat& zbuffer) {
         x_limits[0] = -1;
         x_limits[1] = -1;
 
-        /* calculate intersections */
-        auto s = oi->end() - 1; i = 0;
+         calculate intersections
+        auto s = (*oi)->end() - 1; i = 0;
         idx_s = color.size() - 1; idx_e = 0;
-        for(auto e = oi->begin(); e != oi->end(); e++, idx_e++) {
+        for(auto e = (*oi)->begin(); e != (*oi)->end(); e++, idx_e++) {
           a = obj.at(*e);
           b = obj.at(*s);
           cca = color[idx_e];
@@ -255,7 +253,7 @@ void ray::camera::draw_proj(model* m, cv::Mat& dst, cv::Mat& zbuffer) {
           idx_s = idx_e;
         }
 
-        /* make sure we are in the right order */
+         make sure we are in the right order
         if(x_limits[0] > x_limits[1]) {
           std::swap(x_limits[0], x_limits[1]);
           std::swap(rl[0], rl[1]);
@@ -295,63 +293,24 @@ void ray::camera::draw_proj(model* m, cv::Mat& dst, cv::Mat& zbuffer) {
         }
       }
     }
-  }
-}
-
-
-std::vector<ray::vector> ray::camera::point_color(model* m, polygon& p) {
-  ray::vector Lp, Rl;
-  ray::vector curr, n, v;
-  ray::material mat = m->mat(p.material());
-  std::vector<ray::vector> ret;
-
-  for(polygon::iterator iter = p.begin(); iter != p.end(); iter++) {
-    ray::vector color;
-    curr = p.owner()[*iter];
-    n = p.owner().norm(*iter);
-    v = _fp - curr;
-    v.normalize();
-    n.normalize();
-
-    for(model::l_iterator li = m->l_begin(); li != m->l_end(); li++) {
-      Lp = li->direction(curr);
-      Lp.normalize();
-
-      if(Lp.dot(n) < 0)
-        continue;
-
-      Rl = n * (Lp.dot(n) * 2) - Lp;
-      Rl.normalize();
-
-      color += (mat.diffuse() * li->illumination() * Lp.dot(n)) +
-          (li->illumination() * mat.ks() *
-              std::pow(std::max(0.0, v.dot(Rl)), mat.alpha()));
-    }
-
-    color[0] = std::min(color[0], 255.0);
-    color[1] = std::min(color[1], 255.0);
-    color[2] = std::min(color[2], 255.0);
-
-    ret.push_back(color);
-  }
-
-  return ret;
+  }*/
 }
 
 std::vector<std::vector<double> > ray::camera::point_z(const ray::object& obj) {
-  std::vector<std::vector<double> > ret;
+  /*std::vector<std::vector<double> > ret;
 
   for(auto oi = obj.begin(); oi != obj.end(); oi++) {
     std::vector<double> curr;
 
-    for(auto pi = oi->begin(); pi != oi->end(); pi++) {
+    for(auto pi = (*oi)->begin(); pi != (*oi)->end(); pi++) {
       curr.push_back(-obj.at(*pi)[2]);
     }
 
     ret.push_back(curr);
   }
 
-  return ret;
+  return ret;*/
+  return std::vector<std::vector<double> >();
 }
 
 /**
@@ -361,9 +320,20 @@ std::vector<std::vector<double> > ray::camera::point_z(const ray::object& obj) {
  * @return
  */
 void ray::camera::click(model* m, cv::Mat& dst) {
-  /* locals */
-  std::vector<std::thread*> threads;
   ray::vector U, L;
+
+#ifndef DEBUG
+  ray::l_ray* curr;
+  int n_thread = std::max(int(std::thread::hardware_concurrency()- 1), 3);
+  std::vector<std::thread*> threads;
+
+  rays.start();
+
+  for(int i = 0; i < n_thread; i++) {
+    running++;
+    threads.push_back(new std::thread(wrapper));
+  }
+#endif
 
   /* two different versions of this function can be compiled.
    *   1. A debugging version that runs purely in the main thread. This has
@@ -384,66 +354,46 @@ void ray::camera::click(model* m, cv::Mat& dst) {
       L = vrp() + u()*x + v()*y;
       U = L - fp(); U.normalize();
 #ifdef DEBUG
-      if(x == X_PRINT && y == Y_PRINT)
+      if(x == x_print && y == y_print)
         print = true;
       ray::l_ray(m, L, U, dst.at<cv::Vec<uc, 3> >(vmax() - y, x - umin()))();
-      if(x == X_PRINT && y == Y_PRINT)
+      if(x == x_print && y == y_print)
         print = false;
     }
   }
 
+  int x = x_print - umin();
+  int y = vmax() - y_print;
   cv::Vec<uc, 3> fill(255, 255, 255);
-  int x = X_PRINT - umin();
-  int y = Y_PRINT - vmin();
-  dst.at<cv::Vec<uc, 3> >(x - 1, y - 1) = fill;
-  dst.at<cv::Vec<uc, 3> >(x - 1, y + 1) = fill;
-  dst.at<cv::Vec<uc, 3> >(x - 1, y    ) = fill;
-  dst.at<cv::Vec<uc, 3> >(x    , y - 1) = fill;
-  dst.at<cv::Vec<uc, 3> >(x    , y + 1) = fill;
-  dst.at<cv::Vec<uc, 3> >(x + 1, y - 1) = fill;
-  dst.at<cv::Vec<uc, 3> >(x + 1, y + 1) = fill;
-  dst.at<cv::Vec<uc, 3> >(x + 1, y    ) = fill;
+  dst.at<cv::Vec<uc, 3> >(y - 1, x - 1) = fill;
+  dst.at<cv::Vec<uc, 3> >(y + 1, x - 1) = fill;
+  dst.at<cv::Vec<uc, 3> >(y    , x - 1) = fill;
+  dst.at<cv::Vec<uc, 3> >(y - 1, x    ) = fill;
+  dst.at<cv::Vec<uc, 3> >(y + 1, x    ) = fill;
+  dst.at<cv::Vec<uc, 3> >(y - 1, x + 1) = fill;
+  dst.at<cv::Vec<uc, 3> >(y + 1, x + 1) = fill;
+  dst.at<cv::Vec<uc, 3> >(y    , x + 1) = fill;
 #else
-      ray::l_ray(m, L, U, dst.at<cv::Vec<uc, 3> >(vmax() - y, x - umin()))();
-    }
-    std::cout << "row: " << x << std::endl;
-  }
-      /*rays.push(new ray::l_ray(m, L, U,
-          dst.at<cv::Vec<uc, 3> >(vmax() - y, x - umin())));
+      rays.push((curr = new ray::l_ray(m, L, U,
+          dst.at<cv::Vec<uc, 3> >(vmax() - y, x - umin()))));
     }
   }
 
-  numb_on = 1;
-  block_on = 1;
+  rays.stop();
 
-  int n_thread = std::max(int(std::thread::hardware_concurrency()- 1), 1);
-  for(int i = 0; i < 2; i++) {
-    running++;
-    threads.push_back(new std::thread(wrapper));
-  }
-
-  while(running) {
-    cv::imshow("win", dst);
-    if(numb_on == std::thread::hardware_concurrency()) {
-      cv::waitKey(0);
-      block_on++;
-      wait_on.notify_all();
-      while(numb_on != 1)
-        usleep(100);
-    }
-
-    cv::waitKey(30);
-  }
-
-  for(int i = 0; i < 2; i++) {
+  for(int i = 0; i < n_thread; i++) {
     threads[i]->join();
-  }*/
+  }
 #endif
+
+  std::cout << std::endl;
 
   /* create the output image */
   cv::imwrite("output.png", dst);
-  cv::imshow("win", dst);
-  cv::waitKey(-1);
+  if(camera::animation) {
+    cv::imshow("win", dst);
+    cv::waitKey(-1);
+  }
 }
 
 ray::matrix<4, 4> ray::camera::projection() const {
@@ -496,10 +446,10 @@ void ray::display::show() {
   min = *std::min_element(zbuffer.begin<double>(), zbuffer.end<double>());
   std::transform(zbuffer.begin<double>(), zbuffer.end<double>(),
       zbuffer.begin<double>(), [&min](double val)
-      { return val == std::numeric_limits<double>::max() ?  val : val - min; });
+      { return val == DBL_MAX ?  val : val - min; });
   std::transform(zbuffer.begin<double>(), zbuffer.end<double>(),
       zbuffer.begin<double>(), [](double val)
-      { return val == std::numeric_limits<double>::max() ? 0 : val; });
+      { return val == DBL_MAX ? 0 : val; });
   max = *std::max_element(zbuffer.begin<double>(), zbuffer.end<double>());
   std::transform(zbuffer.begin<double>(), zbuffer.end<double>(),
       zbuffer.begin<double>(), [&max](double val)

@@ -13,9 +13,18 @@
 #include <cstring>
 #include <cmath>
 
+#define EPSILON 1.0e-10
+#define DBL_MAX std::numeric_limits<double>::max()
+#define DBL_MIN std::numeric_limits<double>::min()
+
 #define V_SIZE 4
 
 namespace ray {
+
+  const int X = 0;
+  const int Y = 1;
+  const int Z = 2;
+  const int W = 3;
 
   class vector {
     public:
@@ -53,6 +62,7 @@ namespace ray {
 
       vector  operator*(const vector& rhs) const;
       vector  operator*(double d)          const;
+      vector  operator/(double d)          const;
 
       std::string str() const;
 

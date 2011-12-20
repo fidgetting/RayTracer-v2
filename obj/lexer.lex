@@ -59,7 +59,7 @@ float -?{num}+(\.{num}+)?
 "l"      { yyposs_ret(LIGHT);     }
 "m"      { yyposs_ret(MATERIAL);  }
 "gr"     { yyposs_ret(SHADER);    }
-"tr"     { yyposs_ret(TRACER);    }
+"rt"     { yyposs_ret(TRACER);    }
 
 {comment}   { yyposs_inc; }
 {ws}        { yyposs_inc; }

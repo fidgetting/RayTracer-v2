@@ -22,8 +22,6 @@
 #include <cxcore.h>
 #include <highgui.h>
 
-//#define DEBUG
-
 namespace ray {
 
   class camera {
@@ -66,13 +64,16 @@ namespace ray {
       void draw_wire(model* m, cv::Mat& dst);
       void draw_proj(model* m, cv::Mat& dst, cv::Mat& zbuffer);
 
-      std::vector<ray::vector> point_color(model* m, polygon& p);
       std::vector<std::vector<double> > point_z(const object& obj);
-
 
       void click(model* m, cv::Mat& dst);
       matrix<4, 4> projection() const;
       matrix<4, 4> rotation() const;
+
+      static int x_print;
+      static int y_print;
+
+      static bool animation;
 
 #ifdef DEBUG
       static bool print;

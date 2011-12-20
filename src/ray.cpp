@@ -8,6 +8,7 @@
 #include <camera.h>
 #include <model.h>
 #include <ray.h>
+#include <surface.h>
 
 #include <algorithm>
 #include <limits>
@@ -15,45 +16,42 @@
 using std::get;
 
 bool ray::l_ray::operator()() {
-#ifdef BLOCKING
-  if(_depth == block_on) {
-    std::unique_lock<std::mutex> lock(lock_on);
-    numb_on++;
-    wait_on.wait(lock);
-    numb_on--;
-  }
-#endif
+  static int num_run = 0;
+
   _pixel = _pixel + color();
 
-  if(!(_cont < 0.0039 || _depth > MAX_DEPTH ||
-      (_pixel[0] == 255 && _pixel[1] == 255 && _pixel[2] == 255)))
-    return this->operator ()();
+  if((num_run%1000) == 0)
+    std::cout << "." << std::flush;
+  num_run++;
+
   return false;
 }
 
 ray::vector ray::l_ray::color() {
-  std::tuple<ray::vector, double, const surface*> i, t;
-  get<1>(i) = std::numeric_limits<double>::infinity();
+  const ray::surface* best = NULL;
+  const ray::surface* who  = NULL;
+  ray::ray_info info(src(), dir());
+  ray::vector ci, cn, inter, norm;
+  double d, small;
+
+  small = DBL_MAX;
 
   for(auto iter = _m->begin(); iter != _m->end(); iter++) {
-    for(auto oi = iter->second->begin(); oi != iter->second->end(); oi++) {
-      t = oi->intersection(_direction, _src_point, _src);
+    who = iter->second->root()->intersection(info, _src, ci, d, cn);
 
-      /*if(camera::print) {
-        std::cout << "i: " << get<1>(i) << " t: " << get<1>(t) << std::endl;
-      }*/
-
-      if(get<1>(t) > 0 && get<1>(t) < get<1>(i)) {
-        i = t;
-      }
+    if(who && d > 0 && d < small) {
+      small = d;
+      inter = ci;
+      best  = who;
+      norm  = cn;
     }
   }
 
-  if(get<2>(i) != NULL) {
+  if(best != NULL) {
     return reflectance(
-        get<0>(i),
-        get<2>(i)->normal(get<0>(i)),
-        get<2>(i)) * _cont;
+        inter,
+        norm,
+        best);
   }
 
   _cont = 0;
@@ -93,14 +91,28 @@ ray::vector ray::l_ray::reflectance(vector p, vector n, const surface* s) {
                std::pow(std::max(0.0, v.dot(Rl)), mat.alpha()));
   }
 
+  ret = ret * _cont;
+
   /* recursively calculate new rays */
   Rp = n * (v.dot(n) * 2) - v;
   Rp.normalize();
+
+  if(mat.kt() != 0) {
+    ray::l_ray new_ray(_m, p, _direction, _pixel);
+    new_ray._src = s;
+    new_ray._cont *= mat.kt();
+    new_ray();
+  }
+
   _direction = Rp;
   _src_point = p;
   _src       = s;
   _cont      = mat.ks() * _cont;
   _depth++;
+
+  if(_cont > 0.0039 && _depth < MAX_DEPTH &&
+      ret[X] < 255 && ret[Y] < 255 && ret[Z] < 255)
+    ret += color();
 
   /* clip the colors */
   ret[0] = std::min(int(ret[0]), 255);
@@ -112,15 +124,14 @@ ray::vector ray::l_ray::reflectance(vector p, vector n, const surface* s) {
 
 bool ray::l_ray::shadowed(const ray::vector& pt, const ray::vector& U,
     const surface* s) const {
-  std::tuple<ray::vector, double, const surface*> inter;
+  ray::vector i, n;
   ray::vector tmp = U;
-  tmp.normalize();
+  ray::ray_info info(pt, tmp);
+  double d;
 
   for(auto iter = _m->begin(); iter != _m->end(); iter++) {
-    for(auto oi = iter->second->begin(); oi != iter->second->end(); oi++) {
-      inter = oi->intersection(tmp, pt, s);
-
-      if(get<1>(inter) > 0 && get<1>(inter) < U.length()) {
+    if(iter->second->root()->intersection(info, s, i, d, n)) {
+      if(d > 0 && d < U.length()) {
         return true;
       }
     }

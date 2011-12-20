@@ -12,52 +12,107 @@
 #include <model.h>
 #include <vector.h>
 #include <matrix.tpp>
+#include <ray.h>
 
 /* std library includes */
+#include <stdint.h>
 #include <string>
-#include <tuple>
 #include <vector>
 
 namespace ray {
+
+  struct ray_info {
+
+      ray_info(const ray::vector& L, const ray::vector& U);
+
+      ray::vector _U, _L, _iL, _iU;
+      bool positive[3];
+      bool nonzero[3];
+      bool print;
+
+      inline const ray::vector&  U() const { return  _U; }
+      inline const ray::vector&  L() const { return  _L; }
+      inline const ray::vector& iL() const { return _iL; }
+  };
+
+  class bbox {
+    public:
+
+      bbox() : _min(0.0), _max(0.0), _len(-1.0) { }
+      virtual ~bbox() { }
+
+      inline ray::vector  min() const { return _min; }
+      inline ray::vector& min()       { return _min; }
+      inline ray::vector  max() const { return _max; }
+      inline ray::vector& max()       { return _max; }
+      inline ray::vector  len() const { return _len; }
+      inline ray::vector& len()       { return _len; }
+
+      void expand_by(const ray::bbox& box);
+
+      bool contains(const ray::bbox& box) const;
+      bool intersection(const ray_info& ray) const;
+
+    protected:
+
+      ray::vector _min;
+      ray::vector _max;
+      ray::vector _len;
+  };
 
   class surface {
     public:
       surface() : _id(id_gen++) { };
       virtual ~surface() { };
 
-      virtual ray::vector normal(const ray::vector& v) const = 0;
-      virtual ray::vector center()                     const = 0;
-      virtual double radius()                          const = 0;
+      virtual const ray::bbox& compute_bbox() = 0;
+      virtual const ray::surface* intersection(const ray::ray_info& ray,
+          const surface* skip, vector& I, double& r, vector& n) const = 0;
 
-      virtual std::tuple<vector, double, const surface*>
-        intersection(const vector& U, const vector& L, const surface* skip)
-        const = 0;
-
-      inline std::string& material()       { return _material; }
-      inline std::string  material() const { return _material; }
-      inline int          id()       const { return _id;       }
-      inline bool&        src()            { return _src;      }
-      inline bool         src()      const { return _src;      }
+      inline std::string&     material()       { return _material; }
+      inline std::string      material() const { return _material; }
+      inline int              id()       const { return _id;       }
+      inline const ray::bbox& bounds()   const { return _bounds;   }
 
     protected:
 
       std::string _material;
+      ray::bbox   _bounds;
       int         _id;
-      bool        _src;
 
       static int id_gen;
+  };
+
+  class s_tree : public surface {
+    public:
+
+      s_tree() { }
+      s_tree(const s_tree& cpy);
+      virtual ~s_tree();
+
+      virtual const ray::bbox& compute_bbox();
+      virtual const surface* intersection(const ray::ray_info& ray,
+          const surface* skip, vector& I, double& r, vector& n) const;
+
+      void push(ray::surface* s);
+
+      void split();
+
+      unsigned int size() const;
+
+    protected:
+
+      std::vector<surface*> _kids;
   };
 
   class sphere : public surface {
     public:
 
-      typedef std::vector<surface*>::iterator iterator;
+      typedef std::vector<surface*>::      iterator       iterator;
       typedef std::vector<surface*>::const_iterator const_iterator;
 
-      sphere() { }
-      sphere(const ray::vector& _center, double _radius) :
-        _center(_center), _radius(_radius) { }
-      virtual ~sphere();
+      sphere(const ray::vector& _center, double _radius);
+      virtual ~sphere() { };
 
       inline ray::vector& center()       { return _center; }
       inline ray::vector  center() const { return _center; }
@@ -73,11 +128,11 @@ namespace ray {
       inline const_iterator begin() const { return _subsurfaces.begin(); }
       inline const_iterator end()   const { return _subsurfaces.end();   }
 
-      virtual ray::vector normal(const ray::vector& v) const;
+      ray::vector normal(const ray::vector& v) const;
 
-      virtual std::tuple<vector, double, const surface*>
-        intersection(const vector& U, const vector& L, const surface* skip)
-        const;
+      virtual const ray::bbox& compute_bbox();
+      virtual const surface* intersection(const ray::ray_info& ray,
+          const surface* skip, vector& I, double& r, vector& n) const;
 
     protected:
 
@@ -86,48 +141,36 @@ namespace ray {
       std::vector<surface*> _subsurfaces;
   };
 
-  class polygon : public surface {
+  class triangle : public surface {
     public:
 
-      typedef std::vector<int>::      iterator       iterator;
-      typedef std::vector<int>::const_iterator const_iterator;
+      triangle(uint32_t va, uint32_t vb, uint32_t vc,
+               uint32_t na, uint32_t nb, uint32_t nc,
+               ray::object& owner);
 
-      polygon(ray::object* owner) : _indeces(), _n(), _owner(owner) { }
-      virtual ~polygon() { }
+      inline ray::vector operator[](int i) const
+        { return _owner[_v_idx[i]]; }
 
-      inline void add_vertex(int idx) { _indeces.push_back(idx); }
-      void set_normal();
+      inline ray::vector      n() const { return      _n; }
+      inline ray::vector   perp() const { return   _perp; }
+      inline uint32_t    d_axis() const { return _d_axis; }
+      inline uint32_t    v_axis() const { return _v_axis; }
 
-      inline int           size()             const { return _indeces.size();  }
-      inline vector&     normal()                   { return _n;               }
-      inline vector  operator[](int i)        const { return (*_owner)[i];     }
-      inline vector  get(iterator iter)       const { return (*_owner)[*iter]; }
-      inline vector  get(const_iterator iter) const { return (*_owner)[*iter]; }
+      ray::vector normal(const ray::vector& _v) const;
 
-      inline       iterator begin()       { return _indeces.begin(); }
-      inline       iterator end()         { return _indeces.end();   }
-      inline const_iterator begin() const { return _indeces.begin(); }
-      inline const_iterator end()   const { return _indeces.end();   }
-
-      void operator*=(const ray::matrix<4, 4>& transform);
-
-      virtual vector normal(const vector& v) const;
-      virtual vector center()                const;
-      virtual double radius()                const;
-
-      inline ray::object& owner() { return *_owner; }
-
-      virtual std::tuple<vector, double, const surface*>
-        intersection(const vector& U, const vector& L, const surface* skip)
-        const;
-
-      int id;
+      virtual const ray::bbox& compute_bbox();
+      virtual const surface* intersection(const ray::ray_info& ray,
+          const surface* skip, vector& I, double& r, vector& n) const;
 
     protected:
 
-      std::vector<int> _indeces;
-      ray::vector      _n;
-      ray::object*     _owner;
+      uint32_t     _v_idx[3];
+      uint32_t     _n_idx[3];
+      ray::vector  _n;
+      ray::vector  _perp;
+      ray::object& _owner;
+      uint32_t     _d_axis;
+      uint32_t     _v_axis;
   };
 }
 

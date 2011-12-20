@@ -15,12 +15,13 @@ CXX     = g++
 CFLAGS  = -g -O3 -Wall -std=c++0x `pkg-config opencv --cflags`
 INCPATH = -I. -I../obj -I../util
 EXE     = ../model
-LIBS    = `pkg-config opencv --libs` -L/usr/lib -lpthread
+LIBS    = `pkg-config opencv --libs` -L/usr/lib -lpthread -lboost_program_options
 
 OBJS = $(BIN_DIR)/model.o     \
        $(BIN_DIR)/surface.o   \
        $(BIN_DIR)/ray.o       \
        $(BIN_DIR)/camera.o    \
+       $(BIN_DIR)/main.o      \
 
 HEAD = Makefile               \
        surface.h              \
