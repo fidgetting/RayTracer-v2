@@ -77,17 +77,16 @@ stmtlist:
 
 stmt:
     VERTEX NUM_LIT NUM_LIT NUM_LIT
-    { (*dest)[objn].push_v(objstream::vertex(atof($2), atof($3), atof($4))); }
+    { dest->push_v(objstream::vertex(atof($2), atof($3), atof($4))); }
     
   | VERTEX NUM_LIT NUM_LIT NUM_LIT NUM_LIT
-    { (*dest)[objn].push_v(
-         objstream::vertex(atof($2), atof($3), atof($4), atof($5))); }
+    { dest->push_v(objstream::vertex(atof($2), atof($3), atof($4), atof($5))); }
     
   | TEXTURE NUM_LIT NUM_LIT
-    { (*dest)[objn].push_t(objstream::texture(atof($2), atof($3))); }
+    { dest->push_t(objstream::texture(atof($2), atof($3))); }
     
   | NORMAL NUM_LIT NUM_LIT NUM_LIT
-    { (*dest)[objn].push_n(objstream::vertex(atof($2), atof($3), atof($4))); }
+    { dest->push_n(objstream::vertex(atof($2), atof($3), atof($4))); }
     
   | FACE
     { verts.clear(); texts.clear(); norms.clear(); }

@@ -22,6 +22,8 @@
 #include <cxcore.h>
 #include <highgui.h>
 
+#define DEBUG
+
 namespace ray {
 
   class camera {
@@ -61,10 +63,9 @@ namespace ray {
 
       void translate(double amount, axis which);
       void rotate(double amount, ray::vector around, axis which);
-      void draw_wire(model* m, cv::Mat& dst);
       void draw_proj(model* m, cv::Mat& dst, cv::Mat& zbuffer);
 
-      std::vector<std::vector<double> > point_z(const object& obj);
+      std::vector<double> point_z(const object& obj);
 
       void click(model* m, cv::Mat& dst);
       matrix<4, 4> projection() const;
@@ -111,7 +112,6 @@ namespace ray {
       };
 
       display(ray::model* m, ray::camera* cam, bool wire = true);
-      virtual ~display() { }
 
       void show();
       void exec();
@@ -138,7 +138,6 @@ namespace ray {
       cv::Mat image;
       cv::Mat zbuffer;
   };
-
 }
 
 #endif /* CAMERA_H_INCLUDE */

@@ -2,7 +2,8 @@
 # Exported by Misfit Model 3D 1.3.7
 # Thu Dec 15 15:56:13 2011
 
-g cube
+g default
+usemtl red
 
 # 8 Vertices
 v -6.081448 3.040724 -0.144796

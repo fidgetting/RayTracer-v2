@@ -75,18 +75,15 @@ namespace ray {
 
       const object& operator=(const object& obj);
 
-      void push_vector(const obj::objstream::vertex& v);
-      void push_normal(const obj::objstream::vertex& n);
+      void push_v(const obj::objstream::vertex& v);
+      void push_n(const obj::objstream::vertex& n);
 
-      unsigned int index(const vector& v) const;
+      inline uint32_t v_size() const { return _size;        }
+      inline uint32_t n_size() const { return _norm.size(); }
 
-      inline const vector operator[](int i) const { return ray::vector(&_data[i * V_SIZE]); }
+      inline const vector operator[](int i) const { return &_data[i * V_SIZE]; }
       inline const double*        at(int i) const { return &_data[i * V_SIZE]; }
       inline       double*        at(int i)       { return &_data[i * V_SIZE]; }
-
-      inline unsigned int     size() const { return _size;        }
-      inline unsigned int   n_size() const { return _norm.size(); }
-      inline unsigned int capacity() const { return _capa;        }
 
       inline       ray::s_tree* root()       { return _root; }
       inline const ray::s_tree* root() const { return _root; }
@@ -97,10 +94,10 @@ namespace ray {
       void operator*=(const ray::matrix<4, 4>& mat);
 
     protected:
-      double*  _data;
-      uint32_t _size;
-      uint32_t _capa;
-      ray::s_tree* _root;
+      double*                  _data;
+      uint32_t                 _size;
+      uint32_t                 _capa;
+      ray::s_tree*             _root;
       std::vector<ray::vector> _norm;
   };
 
@@ -116,13 +113,11 @@ namespace ray {
       typedef std::vector<light>::      iterator       l_iterator;
       typedef std::vector<light>::const_iterator l_const_iterator;
 
-      model() { }
-      ~model();
+      model();
+      virtual ~model();
 
       void build(const obj::objstream& src);
       void cmd(  const obj::objstream& src);
-
-      ray::vector center() const;
 
       inline       l_iterator l_begin()       { return _lights.begin(); }
       inline       l_iterator l_end()         { return _lights.end();   }
@@ -139,6 +134,11 @@ namespace ray {
       inline const_reverse_iterator rend()   const { return _objects.rend();   }
 
       material& mat(const std::string& name);
+
+      ray::vector reflectance(vector p, vector v, vector n,
+          const surface* s, bool shadows = true);
+      bool shadowed(const ray::vector& pt, const ray::vector& U,
+          const surface* s) const;
 
       static bool smooth_shading;
       static int  vertex_spheres;

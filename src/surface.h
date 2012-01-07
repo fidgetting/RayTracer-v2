@@ -68,6 +68,8 @@ namespace ray {
       virtual const ray::bbox& compute_bbox() = 0;
       virtual const ray::surface* intersection(const ray::ray_info& ray,
           const surface* skip, vector& I, double& r, vector& n) const = 0;
+      virtual void fill(model* m, const camera* cam, ray::object& obj,
+          cv::Mat& dst, cv::Mat& z_buf, const std::vector<double> z_vals) const = 0;
 
       inline std::string&     material()       { return _material; }
       inline std::string      material() const { return _material; }
@@ -93,6 +95,8 @@ namespace ray {
       virtual const ray::bbox& compute_bbox();
       virtual const surface* intersection(const ray::ray_info& ray,
           const surface* skip, vector& I, double& r, vector& n) const;
+      virtual void fill(model* m, const camera* cam, ray::object& obj,
+          cv::Mat& dst, cv::Mat& z_buf, const std::vector<double> z_vals) const;
 
       void push(ray::surface* s);
 
@@ -133,6 +137,8 @@ namespace ray {
       virtual const ray::bbox& compute_bbox();
       virtual const surface* intersection(const ray::ray_info& ray,
           const surface* skip, vector& I, double& r, vector& n) const;
+      virtual void fill(model* m, const camera* cam, ray::object& obj,
+          cv::Mat& dst, cv::Mat& z_buf, const std::vector<double> z_vals) const;
 
     protected:
 
@@ -150,6 +156,8 @@ namespace ray {
 
       inline ray::vector operator[](int i) const
         { return _owner[_v_idx[i]]; }
+      inline uint32_t at(int i) const
+        { return _v_idx[i]; }
 
       inline ray::vector      n() const { return      _n; }
       inline ray::vector   perp() const { return   _perp; }
@@ -161,6 +169,8 @@ namespace ray {
       virtual const ray::bbox& compute_bbox();
       virtual const surface* intersection(const ray::ray_info& ray,
           const surface* skip, vector& I, double& r, vector& n) const;
+      virtual void fill(model* m, const camera* cam, ray::object& obj,
+          cv::Mat& dst, cv::Mat& z_buf, const std::vector<double> z_vals) const;
 
     protected:
 

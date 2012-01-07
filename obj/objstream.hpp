@@ -188,11 +188,7 @@ namespace obj {
       class group {
         public:
 
-          typedef std::vector<vertex>    ::const_iterator    vertex_iterator;
-          typedef std::vector<texture>   ::const_iterator   texture_iterator;
-          typedef std::vector<vertex>    ::const_iterator    normal_iterator;
           typedef std::vector<face>      ::const_iterator      face_iterator;
-
           typedef std::vector<transform*>::const_reverse_iterator
               transform_iterator;
 
@@ -200,28 +196,12 @@ namespace obj {
           ~group();
 
           /* modifiers */
-          inline void push_v(const    vertex& v) { _verts.push_back(v); }
-          inline void push_t(const   texture& t) { _texts.push_back(t); }
-          inline void push_n(const    vertex& n) { _norms.push_back(n); }
           inline void push_f(const      face& f) { _faces.push_back(f); }
           inline void push_m(      transform* m) { _trans.push_back(m); }
 
           /* accessors */
-          inline const  vertex& v_at(unsigned int i) { return _verts.at(i); }
-          inline const texture& t_at(unsigned int i) { return _texts.at(i); }
-          inline const  vertex& n_at(unsigned int i) { return _norms.at(i); }
-
-          inline unsigned int v_size() const { return _verts.size(); }
-          inline unsigned int t_size() const { return _texts.size(); }
-          inline unsigned int n_size() const { return _norms.size(); }
           inline unsigned int f_size() const { return _faces.size(); }
 
-          inline  vertex_iterator vert_begin() const { return _verts.begin(); }
-          inline  vertex_iterator vert_end()   const { return _verts.end();   }
-          inline texture_iterator text_begin() const { return _texts.begin(); }
-          inline texture_iterator text_end()   const { return _texts.end();   }
-          inline  normal_iterator norm_begin() const { return _norms.begin(); }
-          inline  normal_iterator norm_end()   const { return _norms.end();   }
           inline    face_iterator face_begin() const { return _faces.begin(); }
           inline    face_iterator face_end()   const { return _faces.end();   }
 
@@ -229,9 +209,6 @@ namespace obj {
           inline transform_iterator tran_end()   const { return _trans.rend();   }
 
         private:
-          std::vector<vertex>     _verts;
-          std::vector<texture>    _texts;
-          std::vector<vertex>     _norms;
           std::vector<face>       _faces;
           std::vector<transform*> _trans;
       };
@@ -352,6 +329,32 @@ namespace obj {
       typedef group_map_t::      reverse_iterator       reverse_iterator;
       typedef group_map_t::const_reverse_iterator const_reverse_iterator;
 
+      typedef std::vector<vertex>           ::const_iterator    vertex_iterator;
+      typedef std::vector<texture>          ::const_iterator   texture_iterator;
+      typedef std::vector<vertex>           ::const_iterator    normal_iterator;
+      typedef std::map<std::string, camera> ::const_iterator    camera_iterator;
+
+      inline void push_v(const    vertex& v) { _verts.push_back(v); }
+      inline void push_t(const   texture& t) { _texts.push_back(t); }
+      inline void push_n(const    vertex& n) { _norms.push_back(n); }
+
+      inline const  vertex& v_at(unsigned int i) const { return _verts.at(i); }
+      inline const texture& t_at(unsigned int i) const { return _texts.at(i); }
+      inline const  vertex& n_at(unsigned int i) const { return _norms.at(i); }
+
+      inline unsigned int v_size() const { return _verts.size(); }
+      inline unsigned int t_size() const { return _texts.size(); }
+      inline unsigned int n_size() const { return _norms.size(); }
+
+      inline  vertex_iterator vert_begin() const { return _verts.begin();   }
+      inline  vertex_iterator vert_end()   const { return _verts.end();     }
+      inline texture_iterator text_begin() const { return _texts.begin();   }
+      inline texture_iterator text_end()   const { return _texts.end();     }
+      inline  normal_iterator norm_begin() const { return _norms.begin();   }
+      inline  normal_iterator norm_end()   const { return _norms.end();     }
+      inline  camera_iterator camr_begin() const { return _cameras.begin(); }
+      inline  camera_iterator camr_end()   const { return _cameras.end();   }
+
       inline               iterator begin()        { return _groups.begin();  }
       inline               iterator end()          { return _groups.end();    }
       inline         const_iterator begin()  const { return _groups.begin();  }
@@ -400,6 +403,9 @@ namespace obj {
 
       private:
 
+      std::vector<vertex>             _verts;
+      std::vector<texture>            _texts;
+      std::vector<vertex>             _norms;
       std::map<std::string, group>    _groups;
       std::map<std::string, camera>   _cameras;
       std::map<std::string, material> _materials;

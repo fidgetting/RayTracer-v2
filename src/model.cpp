@@ -18,6 +18,10 @@
 bool ray::model::smooth_shading;
 int  ray::model::vertex_spheres;
 
+/* ************************************************************************** */
+/* *** light and material *************************************************** */
+/* ************************************************************************** */
+
 /**
  * Creates a material based upon the material read from the input file
  */
@@ -48,67 +52,42 @@ ray::vector ray::light::direction(ray::vector src) const {
   return ret;
 }
 
-/**
- * TODO
- */
-ray::object::object() :
-    _data(new double[4]), _size(0), _capa(1), _root(new ray::s_tree()) { }
+/* ************************************************************************** */
+/* *** object *************************************************************** */
+/* ************************************************************************** */
 
 /**
- * TODO
+ * basic contructor for the object class
+ */
+ray::object::object() :
+    _data(new double[V_SIZE]), _size(0), _capa(1), _root(new ray::s_tree()),
+    _norm() { }
+
+/**
+ * Copy contructor for object class.
  *
  * @param obj
  */
-ray::object::object(const object& obj) :
-        _data(new double[obj._capa * 4]), _size(obj._size), _capa(obj._capa),
-        _root(new ray::s_tree()) {
-  memcpy(_data, obj._data, _capa * 4 * sizeof(double));
+ray::object::object(const object& cpy) :
+    _data(new double[cpy._capa * V_SIZE]), _size(cpy._size), _capa(cpy._capa),
+     _root(cpy._root), _norm(cpy._norm) {
+  memcpy(_data, cpy._data, _capa * V_SIZE * sizeof(double));
 }
 
 /**
  * TODO
  */
 ray::object::~object() {
-  delete[] _data;
-  delete   _root;
+  //delete[] _data;
+  //delete   _root;
 }
 
 /**
- * TODO
- *
- * @param obj
- * @return
- */
-const ray::object& ray::object::operator =(const ray::object& obj) {
-  if(this != &obj) {
-    delete[] _data;
-
-    _data = new double[obj._capa * V_SIZE];
-    _size = obj._size;
-    _capa = obj._capa;
-    _root = obj._root;
-    memcpy(_data, obj._data, _capa * V_SIZE * sizeof(double));
-  }
-
-  return obj;
-}
-
-/**
- * TODO
- *
- * @param v
- * @return
- */
-unsigned int ray::object::index(const vector& v) const {
-  return v.ptr() - _data;
-}
-
-/**
- * TODO
+ * Pushes a new vertex onto the list of vertices for the model
  *
  * @param v
  */
-void ray::object::push_vector(const obj::objstream::vertex& v) {
+void ray::object::push_v(const obj::objstream::vertex& v) {
   /* check if the object has enough space */
   if(_size == _capa) {
     _capa *= 2;
@@ -141,8 +120,30 @@ void ray::object::push_vector(const obj::objstream::vertex& v) {
  *
  * @param n
  */
-void ray::object::push_normal(const obj::objstream::vertex& n) {
+void ray::object::push_n(const obj::objstream::vertex& n) {
   _norm.push_back(ray::vector(n.x(), n.y(), n.z()));
+}
+
+/**
+ * TODO
+ *
+ * @param obj
+ * @return
+ */
+const ray::object& ray::object::operator =(const ray::object& asn) {
+  if(this != &asn) {
+    delete[] _data;
+
+    _data = new double[asn._capa * V_SIZE];
+    _size = asn._size;
+    _capa = asn._capa;
+    memcpy(_data, asn._data, _capa * V_SIZE * sizeof(double));
+
+    _norm = asn._norm;
+    _root = asn._root;
+  }
+
+  return asn;
 }
 
 /**
@@ -166,11 +167,24 @@ void ray::object::operator *=(const ray::matrix<4, 4>& mat) {
   }
 }
 
+/* ************************************************************************** */
+/* *** model **************************************************************** */
+/* ************************************************************************** */
+
+/**
+ * Basic constructor for the model class
+ */
+ray::model::model() { }
+
 /**
  * Destructor for the model class. needs to destroy surfaces since polymorphic
  * surfaces must be stored as pointers;
  */
-ray::model::~model() { }
+ray::model::~model() {
+  for(std::pair<std::string, object*> obj : _objects) {
+    delete obj.second;
+  }
+}
 
 /**
  * Given a parser that has parsed a file, this will build the model.
@@ -179,26 +193,22 @@ ray::model::~model() { }
  */
 void ray::model::build(const obj::objstream& src) {
   typedef obj::objstream src_t;
-
   ray::triangle* t;
   int size;
+
+  if((size = src.n_size()) == 0) {
+    model::smooth_shading = false;
+  }
 
   for(src_t::const_iterator iter = src.begin(); iter != src.end(); iter++) {
     object* obj = new object();
 
-    if((size = iter->second.n_size()) == 0) {
-      model::smooth_shading = false;
+    for(unsigned int i = 0; i < src.v_size(); i++) {
+      obj->push_v(src.v_at(i));
     }
 
-    for(src_t::group::vertex_iterator vi = iter->second.vert_begin();
-        vi != iter->second.vert_end(); vi++) {
-      obj->push_vector(*vi);
-    }
-
-    for(src_t::group::normal_iterator ni = iter->second.norm_begin();
-        ni != iter->second.norm_end(); ni++) {
-      obj->push_normal(*ni);
-      obj->norm(obj->n_size() - 1).normalize();
+    for(unsigned int i = 0; i < src.n_size(); i++) {
+      obj->push_n(src.n_at(i));
     }
 
     for(src_t::group::face_iterator fi = iter->second.face_begin();
@@ -211,8 +221,12 @@ void ray::model::build(const obj::objstream& src) {
       src_t::face::iterator cni = fi->n_begin() + 2;
 
       while(cvi != fi->v_end()) {
-        if(size == 0) t = new ray::triangle(*avi, *bvi, *cvi, 0, 0, 0, *obj);
-        else t = new ray::triangle(*avi, *bvi, *cvi, *ani, *bni, *cni, *obj);
+
+        if(size == 0) {
+          t = new ray::triangle( *avi, *bvi, *cvi, 0, 0, 0, *obj);
+        } else {
+          t = new ray::triangle( *avi, *bvi, *cvi, *ani, *bni, *cni, *obj);
+        }
 
         t->material() = fi->mat();
         obj->root()->push(t);
@@ -234,6 +248,7 @@ void ray::model::build(const obj::objstream& src) {
  */
 void ray::model::cmd(const obj::objstream& src) {
   typedef obj::objstream src_t;
+  ray::sphere* sphere;
 
   if(vertex_spheres) {
     obj::objstream::material mat;
@@ -248,20 +263,20 @@ void ray::model::cmd(const obj::objstream& src) {
     object& obj = *_objects[iter->first];
     ray::matrix<4, 4> tran = ray::identity<4>();
 
+    if(ray::model::vertex_spheres) {
+      for(unsigned int i = 0; i < obj.v_size(); i++) {
+        sphere = new ray::sphere(obj[i], model::vertex_spheres);
+        sphere->material() = "vertex_sphere_color";
+        obj.root()->push(sphere);
+      }
+    }
+
     for(src_t::group::transform_iterator ti = iter->second.tran_begin();
         ti != iter->second.tran_end(); ti++) {
       tran *= (*ti)->matrix();
     }
 
     obj *= tran;
-
-    if(vertex_spheres) {
-      for(unsigned int i = 0; i < obj.size(); i++) {
-        ray::sphere* s = new ray::sphere(obj[i], model::vertex_spheres);
-        s->material() = "vertex_sphere_color";
-        obj.root()->push(s);
-      }
-    }
 
     obj.root()->split();
     obj.root()->compute_bbox();
@@ -276,27 +291,6 @@ void ray::model::cmd(const obj::objstream& src) {
   }
 }
 
-ray::vector ray::model::center() const {
-  ray::vector ret;
-  int total = 0;
-
-  for(auto iter = begin(); iter != end(); iter++) {
-    ray::object& obj = *iter->second;
-    total += obj.size();
-
-    for(unsigned int i = 0; i < obj.size(); i++) {
-      ret += obj[i];
-    }
-  }
-
-  ret[0] /= double(total);
-  ret[1] /= double(total);
-  ret[2] /= double(total);
-  ret[3] = 0;
-
-  return ret;
-}
-
 /**
  * TODO
  *
@@ -309,4 +303,75 @@ ray::material& ray::model::mat(const std::string& name) {
   return _materials[name];
 }
 
+/**
+ * TODO
+ *
+ * @param m
+ * @param p
+ * @param v
+ * @param n
+ * @param s
+ * @param shadows
+ * @return
+ */
+ray::vector ray::model::reflectance(vector p, vector v, vector n,
+    const surface* s, bool shadows) {
+  /* locals */
+  ray::material m = mat(s->material());
+  ray::vector Lp, Rl;
+  ray::vector ret;
+
+  /* setup the necessary vectors */
+  v.normalize();
+  n.normalize();
+  if(v.dot(n) < 0)
+    n.negate();
+
+  /* add each light to the color */
+  for(auto light = l_begin(); light != l_end(); light++) {
+    /* direct of the light source */
+    Lp = light->direction(p);
+    Lp.normalize();
+
+    /* check for shadowed */
+    if(Lp.dot(n) < 0 || (shadows && shadowed(p, light->direction(p), s))) {
+      continue;
+    }
+
+    Rl = n * (Lp.dot(n) * 2) - Lp;
+    Rl.normalize();
+
+    ret += (m.diffuse() * light->illumination() * Lp.dot(n)) +
+           (light->illumination() * m.ks() *
+               std::pow(std::max(0.0, v.dot(Rl)), m.alpha()));
+  }
+
+  return ret;
+}
+
+/**
+ *
+ * @param m
+ * @param pt
+ * @param U
+ * @param s
+ * @return
+ */
+bool ray::model::shadowed(const ray::vector& pt, const ray::vector& U,
+    const surface* s) const {
+  ray::vector i, n;
+  ray::vector tmp = U;
+  ray::ray_info info(pt, tmp);
+  double d;
+
+  for(auto iter = begin(); iter != end(); iter++) {
+    if(iter->second->root()->intersection(info, s, i, d, n)) {
+      if(d > 0 && d < U.length()) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
 

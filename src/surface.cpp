@@ -16,6 +16,7 @@ using std::get;
 
 #define max3_corrdinate(x, y, z) \
   ((x > y) ? ((x > z) ? X : Z) : ((y > z) ? Y : Z))
+#define POLY_NORM(i) _owner.norm(_n_idx[i])
 
 #define max3(x, y, z) ((x > y) ? ((x > z) ? x : z) : ((y > z) ? y : z))
 #define min3(x, y, z) ((x < y) ? ((x < z) ? x : z) : ((y < z) ? y : z))
@@ -316,6 +317,19 @@ const ray::surface* ray::s_tree::intersection(const ray::ray_info& ray,
 /**
  * TODO
  *
+ * @param dst
+ * @param z_vals
+ */
+void ray::s_tree::fill(model* m, const camera* cam, ray::object& obj,
+    cv::Mat& dst, cv::Mat& z_buf, std::vector<double> z_vals) const {
+  for(surface* curr : _kids) {
+    curr->fill(m, cam, obj, dst, z_buf, z_vals);
+  }
+}
+
+/**
+ * TODO
+ *
  * @param s
  */
 void ray::s_tree::push(ray::surface* s) {
@@ -494,6 +508,17 @@ const ray::surface* ray::sphere::intersection(const ray::ray_info& ray,
 }
 
 /**
+ * not implemented
+ *
+ * @param dst
+ * @param z_vals
+ */
+void ray::sphere::fill(model* m, const camera* cam, ray::object& obj,
+    cv::Mat& dst, cv::Mat& z_buf, const std::vector<double> z_vals) const {
+  /* do nothing */
+}
+
+/**
  * TODO
  *
  * @param a
@@ -585,14 +610,11 @@ ray::vector ray::triangle::normal(const ray::vector& inter) const {
   v = ((diff[_v_axis]    - THIS[1][_v_axis]) /
        (THIS[2][_v_axis] - THIS[1][_v_axis]));
 
-#define NORM(i) _owner.norm(_n_idx[i])
-  nt1 = NORM(0) + ((NORM(1) - NORM(0)) * u);
-  nt2 = NORM(0) + ((NORM(2) - NORM(0)) * u);
+  nt1 = POLY_NORM(0) + ((POLY_NORM(1) - POLY_NORM(0)) * u);
+  nt2 = POLY_NORM(0) + ((POLY_NORM(2) - POLY_NORM(0)) * u);
 
   diff = nt1 + ((nt2 - nt1) * v);
-
   diff.normalize();
-#undef NORM
 
   return diff;
 }
@@ -667,4 +689,105 @@ const ray::surface* ray::triangle::intersection(const ray::ray_info& ray,
 
   no = normal(I);
   return this;
+}
+
+#define X_CORD(obj, idx) (obj.at(at(idx)))[X]
+#define Y_CORD(obj, idx) (obj.at(at(idx)))[Y]
+
+/**
+ *
+ * @param m
+ * @param cam
+ * @param obj
+ * @param dst
+ * @param z_buf
+ * @param z_vals
+ */
+void ray::triangle::fill(model* m, const camera* cam, ray::object& obj,
+    cv::Mat& dst, cv::Mat& z_buf, std::vector<double> z_vals) const {
+  ray::vector loca[2], d_loca, la, lb;
+  ray::vector norm[2], d_norm, na, nb;
+  ray::vector a, b, color;
+  double z, dz, za, zb, zl[2];
+  int x_limits[2];
+  int ymin, ymax;
+  int s, e, i;
+
+  ymin = std::ceil (min3(Y_CORD(obj, 0), Y_CORD(obj, 1), Y_CORD(obj, 2)));
+  ymax = std::floor(max3(Y_CORD(obj, 0), Y_CORD(obj, 1), Y_CORD(obj, 2)));
+  if(ymax < 0 || ymin > dst.rows) return;
+
+  ymin = std::max(ymin, 0);
+  ymax = std::min(ymax, dst.rows);
+
+  for(int curr_y = ymin - 1; curr_y < ymax + 1; curr_y++) {
+    x_limits[0] = x_limits[1] = -1;
+
+    s = 2; i = 0;
+    for(e = 0; e < 3; e++) {
+      a = obj.at(at(e));
+      b = obj.at(at(s));
+      la = THIS[e];
+      lb = THIS[s];
+      na = POLY_NORM(e);
+      nb = POLY_NORM(s);
+      za = z_vals[at(e)];
+      zb = z_vals[at(s)];
+
+      if((a[1] < curr_y && b[1] >= curr_y) ||
+         (b[1] < curr_y && a[1] >= curr_y)) {
+        x_limits[i] = int(a[0] + (curr_y - a[1])/(b[1] - a[1]) * (b[0] - a[0]));
+        loca[i][X] = (la[X] + (curr_y - a[1]) / (b[1] - a[1]) * (lb[X] - la[X]));
+        loca[i][Y] = (la[Y] + (curr_y - a[1]) / (b[1] - a[1]) * (lb[Y] - la[Y]));
+        loca[i][Z] = (la[Z] + (curr_y - a[1]) / (b[1] - a[1]) * (lb[Z] - la[Z]));
+        norm[i][X] = (na[X] + (curr_y - a[1]) / (b[1] - a[1]) * (nb[X] - na[X]));
+        norm[i][Y] = (na[Y] + (curr_y - a[1]) / (b[1] - a[1]) * (nb[Y] - na[Y]));
+        norm[i][Z] = (na[Z] + (curr_y - a[1]) / (b[1] - a[1]) * (nb[Z] - na[Z]));
+        zl[i]      = (za    + (curr_y - a[1]) / (b[1] - a[1]) * (zb    - za));
+
+        i++;
+      }
+
+      s = e;
+    }
+
+    if(x_limits[0] > x_limits[1]) {
+      std::swap(x_limits[0], x_limits[1]);
+      std::swap(loca[0], loca[1]);
+      std::swap(norm[0], norm[1]);
+      std::swap(zl[0], zl[1]);
+    }
+
+    d_loca = (loca[1] - loca[0]) / (x_limits[1] - x_limits[0]);
+    d_norm = (norm[1] - norm[0]) / (x_limits[1] - x_limits[0]);
+    dz     = (  zl[1] -   zl[0]) / (x_limits[1] - x_limits[0]);
+    z = zl[0];
+
+    if(x_limits[0] >= dst.cols || x_limits[1] < 0)
+      continue;
+    if(x_limits[0] < 0 ) {
+      loca[0] += d_loca * (0 - x_limits[0]);
+      norm[0] += d_norm * (0 - x_limits[0]);
+      z += (0 - x_limits[0]) * dz;
+      x_limits[0] = 0;
+    }
+    if(x_limits[1] > dst.cols)
+      x_limits[1] = dst.cols;
+
+    for(i = x_limits[0]; i < x_limits[1]; i++) {
+
+      if(z_buf.at<double>(curr_y, i) > z) {
+        color = m->reflectance(loca[0], (cam->fp() - loca[0]), norm[0], this,
+            false);
+        dst.at<cv::Vec<uc, 3> >(curr_y, i)[Z] = std::min(color[X], 255.0);
+        dst.at<cv::Vec<uc, 3> >(curr_y, i)[Y] = std::min(color[Y], 255.0);
+        dst.at<cv::Vec<uc, 3> >(curr_y, i)[X] = std::min(color[Z], 255.0);
+        z_buf.at<double>(curr_y, i) = z;
+      }
+
+      loca[0] += d_loca;
+      norm[0] += d_norm;
+      z       += dz;
+    }
+  }
 }

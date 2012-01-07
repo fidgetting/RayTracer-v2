@@ -172,24 +172,6 @@ std::ostream& operator<<(std::ostream& ostr, const obj::objstream& o) {
  * @return
  */
 std::ostream& operator<<(std::ostream& ostr, const obj::objstream::  group& g) {
-  ostr << "  vertices:" << std::endl;
-  for(obj::objstream::group::vertex_iterator iter = g.vert_begin();
-      iter != g.vert_end(); iter++) {
-    ostr << "    " << (*iter) << std::endl;
-  }
-
-  ostr << "  textures:" << std::endl;
-  for(obj::objstream::group::texture_iterator iter = g.text_begin();
-      iter != g.text_end(); iter++) {
-    ostr << "    " << (*iter) << std::endl;
-  }
-
-  ostr << "  normals:" << std::endl;
-  for(obj::objstream::group::normal_iterator iter = g.norm_begin();
-      iter != g.norm_end(); iter++) {
-    ostr << "    " << (*iter) << std::endl;
-  }
-
   ostr << "  faces:" << std::endl;
   for(obj::objstream::group::face_iterator iter = g.face_begin();
       iter != g.face_end(); iter++) {

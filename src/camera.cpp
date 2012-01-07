@@ -5,6 +5,7 @@
  *      Author: norton
  */
 
+#include <surface.h>
 #include <camera.h>
 #include <queue.tpp>
 
@@ -72,7 +73,7 @@ void ray::camera::translate(double amount, axis which) {
     case y_axis: _fp = _fp + (_v * amount); break;
     case z_axis: _fp = _fp + (_n * amount); break;
   }
-  _vrp = _fp + (_n * (-_fl));
+  _vrp = _fp + (_n * _fl);
 }
 
 /**
@@ -135,43 +136,7 @@ void ray::camera::rotate(double amount, ray::vector around, axis which) {
   _n   = rotat * _n;
   _u   = rotat * _u;
   _v   = rotat * _v;
-  _vrp = _fp + (_n * (-_fl));
-}
-
-/**
- * TODO
- *
- * @param m
- * @param dst
- */
-void ray::camera::draw_wire(model* m, cv::Mat& dst) {
-  /*ray::matrix<4, 4> proj = projection();
-  ray::matrix<4, 4> rota = rotation();
-
-  for(auto iter = m->begin(); iter != m->end(); iter++) {
-    ray::object obj = *(iter->second);
-
-    obj *= rota;
-    obj *= proj;
-
-    for(unsigned int i = 0; i < obj.size(); i++) {
-      obj.at(i)[0] =  int(std::round(obj.at(i)[0] / obj.at(i)[3])) - _umin;
-      obj.at(i)[1] = -int(std::round(obj.at(i)[1] / obj.at(i)[3])) - _vmin;
-      obj.at(i)[2] /= obj.at(i)[3];
-      obj.at(i)[3] /= obj.at(i)[3];
-    }
-
-    for(auto oi = obj.begin(); oi != obj.end(); oi++) {
-      auto s = (*oi)->end() - 1;
-      for(auto e = (*oi)->begin(); e != (*oi)->end(); e++) {
-        cv::line(dst,
-            cv::Point(obj.at(*s)[0], obj.at(*s)[1]),
-            cv::Point(obj.at(*e)[0], obj.at(*e)[1]),
-            cv::Scalar(255, 0, 0));;
-        s = e;
-      }
-    }
-  }*/
+  _vrp = _fp + (_n * _fl);
 }
 
 /**
@@ -182,18 +147,12 @@ void ray::camera::draw_wire(model* m, cv::Mat& dst) {
  * @param zbuffer
  */
 void ray::camera::draw_proj(model* m, cv::Mat& dst, cv::Mat& zbuffer) {
-  /*int x_limits[2], j, idx_s, idx_e, idx_f;
-  double rl[2], gl[2], bl[2], zl[2], za, zb;
-  unsigned int i;
-  double ymin, ymax;
-
-  ray::vector a, b, cca, ccb;
-  std::vector<std::vector<double> > z_values;
+  std::vector<double> z_values;
   ray::matrix<4, 4> proj = projection();
   ray::matrix<4, 4> rota = rotation();
 
   for(auto iter = zbuffer.begin<double>(); iter != zbuffer.end<double>(); iter++)
-    *iter = std::numeric_limits<double>::max();
+    *iter = DBL_MAX;
 
   for(auto iter = m->begin(); iter != m->end(); iter++) {
     ray::object obj = *(iter->second);
@@ -201,116 +160,31 @@ void ray::camera::draw_proj(model* m, cv::Mat& dst, cv::Mat& zbuffer) {
     z_values = point_z(obj);
     obj *= proj;
 
-    for(i = 0; i < obj.size(); i++) {
+    for(unsigned int i = 0; i < obj.v_size(); i++) {
       obj.at(i)[0] =  int(std::round(obj.at(i)[0] / obj.at(i)[3])) - _umin;
       obj.at(i)[1] = -int(std::round(obj.at(i)[1] / obj.at(i)[3])) - _vmin;
       obj.at(i)[2] /= obj.at(i)[3];
       obj.at(i)[3] /= obj.at(i)[3];
     }
 
-    idx_f = 0;
-    for(auto oi = obj.begin(); oi != obj.end(); oi++, idx_f++) {
-      std::vector<ray::vector> color = point_color(m, **oi);
-
-      ymin = std::numeric_limits<double>::max();
-      ymax = std::numeric_limits<double>::min();
-
-      for(auto pi = (*oi)->begin(); pi != (*oi)->end(); pi++) {
-        if(obj.at(*pi)[1] < ymin) ymin = std::ceil (obj.at(*pi)[1]);
-        if(obj.at(*pi)[1] > ymax) ymax = std::floor(obj.at(*pi)[1]);
-      }
-
-      ymin = std::min(std::max(ymin, 0.0), double(dst.rows));
-      ymax = std::min(std::max(ymax, 0.0), double(dst.rows));
-
-      for(int curr_y = ymin; curr_y < ymax + 1; curr_y++) {
-        x_limits[0] = -1;
-        x_limits[1] = -1;
-
-         calculate intersections
-        auto s = (*oi)->end() - 1; i = 0;
-        idx_s = color.size() - 1; idx_e = 0;
-        for(auto e = (*oi)->begin(); e != (*oi)->end(); e++, idx_e++) {
-          a = obj.at(*e);
-          b = obj.at(*s);
-          cca = color[idx_e];
-          ccb = color[idx_s];
-          za = z_values[idx_f][idx_e];
-          zb = z_values[idx_f][idx_s];
-
-          if((a[1] < curr_y && b[1] >= curr_y) ||
-             (b[1] < curr_y && a[1] >= curr_y)) {
-            x_limits[i] = int(a[0] + (curr_y - a[1])/(b[1] - a[1]) * (b[0] - a[0]));
-            rl[i] =  (cca[0] + (curr_y - a[1])/(b[1] - a[1]) * (ccb[0] - cca[0]));
-            gl[i] =  (cca[1] + (curr_y - a[1])/(b[1] - a[1]) * (ccb[1] - cca[1]));
-            bl[i] =  (cca[2] + (curr_y - a[1])/(b[1] - a[1]) * (ccb[2] - cca[2]));
-            zl[i] =  (za     + (curr_y - a[1])/(b[1] - a[1]) * (zb     - za));
-
-            i++;
-          }
-
-          s = e;
-          idx_s = idx_e;
-        }
-
-         make sure we are in the right order
-        if(x_limits[0] > x_limits[1]) {
-          std::swap(x_limits[0], x_limits[1]);
-          std::swap(rl[0], rl[1]);
-          std::swap(gl[0], gl[1]);
-          std::swap(bl[0], bl[1]);
-          std::swap(zl[0], zl[1]);
-        }
-
-        double r = rl[0], dr = (rl[1] - rl[0])/(x_limits[1] - x_limits[0]);
-        double g = gl[0], dg = (gl[1] - gl[0])/(x_limits[1] - x_limits[0]);
-        double b = bl[0], db = (bl[1] - bl[0])/(x_limits[1] - x_limits[0]);
-        double z = zl[0], dz = (zl[1] - zl[0])/(x_limits[1] - x_limits[0]);
-
-        if(x_limits[0] >= dst.cols || x_limits[1] < 0)
-          continue;
-        if(x_limits[0] < 0 ) {
-          z += (0 - x_limits[0]) * dz;
-          r += (0 - x_limits[0]) * dr;
-          g += (0 - x_limits[0]) * dg;
-          b += (0 - x_limits[0]) * db;
-          x_limits[0] = 0;
-        }
-        if(x_limits[1] > dst.cols)
-          x_limits[1] = dst.cols;
-
-        for(j = x_limits[0]; j < x_limits[1]; j++) {
-          if(zbuffer.at<double>(curr_y, j) > z) {
-            dst.at<cv::Vec<unsigned char, 3> >(curr_y, j) =
-                cv::Vec<unsigned char, 3> (
-                    std::round(b), std::round(g), std::round(r));
-            zbuffer.at<double>(curr_y, j) = z;
-          }
-          r += dr;
-          g += dg;
-          b += db;
-          z += dz;
-        }
-      }
-    }
-  }*/
+    iter->second->root()->fill(m, this, obj, dst, zbuffer, z_values);
+  }
 }
 
-std::vector<std::vector<double> > ray::camera::point_z(const ray::object& obj) {
-  /*std::vector<std::vector<double> > ret;
+/**
+ * TODO
+ *
+ * @param obj
+ * @return
+ */
+std::vector<double> ray::camera::point_z(const ray::object& obj) {
+  std::vector<double> ret;
 
-  for(auto oi = obj.begin(); oi != obj.end(); oi++) {
-    std::vector<double> curr;
-
-    for(auto pi = (*oi)->begin(); pi != (*oi)->end(); pi++) {
-      curr.push_back(-obj.at(*pi)[2]);
-    }
-
-    ret.push_back(curr);
+  for(unsigned int i = 0; i < obj.v_size(); i++) {
+    ret.push_back(-obj[i][2]);
   }
 
-  return ret;*/
-  return std::vector<std::vector<double> >();
+  return ret;
 }
 
 /**
@@ -356,23 +230,13 @@ void ray::camera::click(model* m, cv::Mat& dst) {
 #ifdef DEBUG
       if(x == x_print && y == y_print)
         print = true;
-      ray::l_ray(m, L, U, dst.at<cv::Vec<uc, 3> >(vmax() - y, x - umin()))();
-      if(x == x_print && y == y_print)
+      ray::l_ray(m, L, U,
+          dst.at<cv::Vec<uc, 3> >(vmax() - y, x - umin()))();
+      if(x == x_print && y == y_print) {
         print = false;
+      }
     }
   }
-
-  int x = x_print - umin();
-  int y = vmax() - y_print;
-  cv::Vec<uc, 3> fill(255, 255, 255);
-  dst.at<cv::Vec<uc, 3> >(y - 1, x - 1) = fill;
-  dst.at<cv::Vec<uc, 3> >(y + 1, x - 1) = fill;
-  dst.at<cv::Vec<uc, 3> >(y    , x - 1) = fill;
-  dst.at<cv::Vec<uc, 3> >(y - 1, x    ) = fill;
-  dst.at<cv::Vec<uc, 3> >(y + 1, x    ) = fill;
-  dst.at<cv::Vec<uc, 3> >(y - 1, x + 1) = fill;
-  dst.at<cv::Vec<uc, 3> >(y + 1, x + 1) = fill;
-  dst.at<cv::Vec<uc, 3> >(y    , x + 1) = fill;
 #else
       rays.push((curr = new ray::l_ray(m, L, U,
           dst.at<cv::Vec<uc, 3> >(vmax() - y, x - umin()))));
@@ -386,12 +250,10 @@ void ray::camera::click(model* m, cv::Mat& dst) {
   }
 #endif
 
-  std::cout << std::endl;
-
   /* create the output image */
   cv::imwrite("output.png", dst);
   if(camera::animation) {
-    cv::imshow("win", dst);
+    cv::imshow(WIND, dst);
     cv::waitKey(-1);
   }
 }
@@ -424,38 +286,22 @@ ray::display::display(ray::model* m, ray::camera* cam, bool wire) :
     _m(m), _cam(cam), _rot(), _wire(wire), last_x(-1), last_y(-1), _state(none),
     image  (cam->height(), cam->width(), CV_8UC3),
     zbuffer(cam->height(), cam->width(), CV_64FC1) {
-  cv::namedWindow(ZBUF, CV_WINDOW_AUTOSIZE);
   cv::namedWindow(WIND, CV_WINDOW_AUTOSIZE);
+  //cv::namedWindow(ZBUF, CV_WINDOW_AUTOSIZE);
   cvSetMouseCallback(WIND, ray::display::mouse, this);
-  cvSetMouseCallback(ZBUF, ray::display::mouse, this);
+  //cvSetMouseCallback(ZBUF, ray::display::mouse, this);
   gettimeofday(&last_t, NULL);
   dir = cam->fl() < 0 ? -1 : 1;
 }
 
 void ray::display::show() {
-  double min, max;
 
   for(auto iter = image.begin<cv::Vec<uc, 3> >();
       iter != image.end<cv::Vec<uc, 3> >(); iter++) {
     *iter = cv::Vec<uc, 3>();
   }
 
-  if(_wire) _cam->draw_wire(_m, image);
-  else      _cam->draw_proj(_m, image, zbuffer);
-
-  min = *std::min_element(zbuffer.begin<double>(), zbuffer.end<double>());
-  std::transform(zbuffer.begin<double>(), zbuffer.end<double>(),
-      zbuffer.begin<double>(), [&min](double val)
-      { return val == DBL_MAX ?  val : val - min; });
-  std::transform(zbuffer.begin<double>(), zbuffer.end<double>(),
-      zbuffer.begin<double>(), [](double val)
-      { return val == DBL_MAX ? 0 : val; });
-  max = *std::max_element(zbuffer.begin<double>(), zbuffer.end<double>());
-  std::transform(zbuffer.begin<double>(), zbuffer.end<double>(),
-      zbuffer.begin<double>(), [&max](double val)
-      { return val / max; });
-
-  cv::imshow(ZBUF, zbuffer);
+  _cam->draw_proj(_m, image, zbuffer);
   cv::imshow(WIND, image);
 }
 
