@@ -232,6 +232,18 @@ bool ray::bbox::intersection(const ray::ray_info& ray) const {
 }
 
 /**
+ * Gets the location of the center of the bouding box
+ *
+ * @return vector center of the bounding box
+ */
+ray::vector ray::bbox::center() const {
+  return ray::vector(
+      _min[X] + (_len[X] / 2.0),
+      _min[Y] + (_len[Y] / 2.0),
+      _min[Z] + (_len[Z] / 2.0));
+}
+
+/**
  *
  * @param cpy
  */
@@ -717,7 +729,7 @@ void ray::triangle::fill(model* m, const camera* cam, ray::object& obj,
   ymax = std::floor(max3(Y_CORD(obj, 0), Y_CORD(obj, 1), Y_CORD(obj, 2)));
   if(ymax < 0 || ymin > dst.rows) return;
 
-  ymin = std::max(ymin, 0);
+  ymin = std::max(ymin, 1);
   ymax = std::min(ymax, dst.rows);
 
   for(int curr_y = ymin - 1; curr_y < ymax + 1; curr_y++) {

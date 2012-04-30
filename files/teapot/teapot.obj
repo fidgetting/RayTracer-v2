@@ -3,6 +3,7 @@
 # Wed Dec  7 20:50:50 2011
 
 g cube
+mtllib teapot.mtl
 usemtl red
 
 # 3644 Vertices

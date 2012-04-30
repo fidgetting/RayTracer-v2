@@ -17,18 +17,13 @@ namespace po = boost::program_options;
 /* ************************************************************************** */
 
 int main(int argc, char** argv) {
-  std::map<std::string, ray::camera> f_cam;
-  std::string f_command;
-  std::string f_model;
 
   po::options_description opt("Options");
   opt.add_options()
       ("help,h", "produce help message")
       ("smooth,s", "turn off smooth shading")
-      ("vertex,v", po::value<int>(), "turn on vertex spheres")
       ("interactive,i", "turn on the render animation")
-      ("cmd,c", po::value<std::string>(), "command input file")
-      ("mod,m", po::value<std::string>(), "model input file")
+      ("model,m", po::value<std::string>(), "model input file")
       ("X,x", po::value<int>(), "the x location of the debug pixel")
       ("Y,y", po::value<int>(), "the y location of the debug pixel");
 
@@ -41,43 +36,17 @@ int main(int argc, char** argv) {
     return -1;
   }
 
-  obj::objstream obj(vm["mod"].as<std::string>());
-  obj::objstream cmd(vm["cmd"].as<std::string>());
+  obj::objstream obj(vm["model"].as<std::string>());
   ray::model::smooth_shading = !vm.count("smooth");
-  ray::model::vertex_spheres = vm.count("vertex") ? vm["vertex"].as<int>() : 0;
   ray::camera::x_print = vm.count("X") ? vm["X"].as<int>() : 0;
   ray::camera::y_print = vm.count("Y") ? vm["Y"].as<int>() : 0;
   ray::camera::animation = vm.count("interactive");
   ray::model m;
 
   m.build(obj);
-  m.cmd(cmd);
-
-  for(auto iter = cmd.camr_begin(); iter != cmd.camr_end(); iter++) {
-    f_cam.insert( std::pair<std::string, ray::camera>(
-            iter->first,
-            iter->second));
-  }
-
-  for(int i = 0; i < cmd.size(); i++) {
-    ray::camera& c = f_cam.find(cmd[i]->name())->second;
-    std::ostringstream ostr;
-
-    c.umin() = cmd[i]->minx();
-    c.umax() = cmd[i]->maxx();
-    c.vmin() = cmd[i]->miny();
-    c.vmax() = cmd[i]->maxy();
-
-    if(cmd[i]->type() == obj::objstream::view::wireframe) {
-      std::cerr << "ERROR: wireframe not currently implemented" << std::endl;
-    } else if(cmd[i]->type() == obj::objstream::view::shader) {
-      ray::display disp(&m, &c, false);
-      disp.exec();
-    } else {
-      cv::Mat image(c.height() + 1, c.width() + 1, CV_8UC3);
-      c.click(&m, image);
-    }
-  }
+  ray::camera c(m);
+  ray::display d(m, c, false);
+  d.exec();
 
   return 0;
 }

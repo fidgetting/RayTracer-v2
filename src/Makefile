@@ -12,10 +12,12 @@
 BIN_DIR = ../bin
 
 CXX     = g++
+LINK    = g++
 CFLAGS  = -g -O3 -Wall -std=c++0x `pkg-config opencv --cflags`
 INCPATH = -I. -I../obj -I../util
 EXE     = ../model
-LIBS    = `pkg-config opencv --libs` -L/usr/lib -lpthread -lboost_program_options
+LIBS    = `pkg-config opencv --libs` -L/usr/lib -lpthread \
+          -lboost_program_options -lboost_filesystem -lboost_system
 
 OBJS = $(BIN_DIR)/model.o     \
        $(BIN_DIR)/surface.o   \
@@ -35,7 +37,7 @@ HEAD = Makefile               \
 
 all: $(EXE)
 $(EXE): $(OBJS) $(BIN_DIR)/*.o $(HEAD)
-	$(CXX) -o $(EXE) $(BIN_DIR)/*.o $(INCPATH) $(CFLAGS) $(LIBS)
+	$(LINK) -o $(EXE) $(BIN_DIR)/*.o $(INCPATH) $(CFLAGS) $(LIBS)
 
 debug:
 	$(MAKE) all DEF=-DDEBUG

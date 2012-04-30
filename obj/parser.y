@@ -22,9 +22,13 @@ using namespace obj;
 extern int yylex();
 extern int yyline;
 extern int yyposs;
+extern FILE* yyin;
+
+FILE* yyin_tmp;
 
 std::string        objn = "default";
-std::string        mtln = "";
+std::string        mtln = "default_model_material";
+std::string        mtlr = "";
 std::vector<int>   verts;
 std::vector<int>   texts;
 std::vector<int>   norms;
@@ -34,7 +38,7 @@ int    store;
 int id_gen = 0;
 
 void yyerror(const char* msg) {
-  std::cout << msg << std::endl;
+  std::cout << msg << " " << yyline << ":" << yyposs << std::endl;
 }
 
 %}
@@ -43,9 +47,9 @@ void yyerror(const char* msg) {
   char str_t[256];
 }
 
-%token         ROTATE TRANSLATE SCALE ARBITRARY
+%token         NEWMTL KAMBIENT KDIFFUSE KSPECULAR PHONG ILLUM
+%token         USEMTL MTLLIB
 %token         VERTEX TEXTURE NORMAL
-%token         MATERIAL LIGHT SHADER TRACER USEMTL
 %token         GROUP
 %token         FACE
 %token         SLASH
@@ -97,115 +101,45 @@ stmt:
     
       (*dest)[objn].push_f(f);
     }
-  
-  | ROTATE STRING_LIT NUM_LIT NUM_LIT NUM_LIT NUM_LIT
-    { (*dest)[$2].push_m(
-         new objstream::rotate(atof($3), atof($4), atof($5), atof($6))); }
-    
-  | TRANSLATE STRING_LIT NUM_LIT NUM_LIT NUM_LIT
-    { (*dest)[$2].push_m(
-         new objstream::translate(atof($3), atof($4), atof($5))); }
-  
-  | SCALE STRING_LIT NUM_LIT NUM_LIT NUM_LIT
-    { (*dest)[$2].push_m(
-         new objstream::scale(atof($3), atof($4), atof($5))); }
-  
-  | ARBITRARY STRING_LIT NUM_LIT NUM_LIT NUM_LIT NUM_LIT
-                         NUM_LIT NUM_LIT NUM_LIT NUM_LIT
-                         NUM_LIT NUM_LIT NUM_LIT NUM_LIT
-                         NUM_LIT NUM_LIT NUM_LIT NUM_LIT
-    {
-      objstream::arbitrary* ar = new objstream::arbitrary();
-      (*ar)[0][0] = atof($3);  (*ar)[0][1] = atof($4);  (*ar)[0][2] = atof($5);  (*ar)[0][3] = atof($6);
-      (*ar)[1][0] = atof($7);  (*ar)[1][1] = atof($8);  (*ar)[1][2] = atof($9);  (*ar)[1][3] = atof($10);
-      (*ar)[2][0] = atof($11); (*ar)[2][1] = atof($12); (*ar)[2][2] = atof($13); (*ar)[2][3] = atof($14);
-      (*ar)[3][0] = atof($15); (*ar)[3][1] = atof($16); (*ar)[3][2] = atof($17); (*ar)[3][3] = atof($18);
-      (*dest)[$2].push_m(ar);
-    }
-    
-  | CAMERA STRING_LIT NUM_LIT 
-                      NUM_LIT NUM_LIT NUM_LIT
-                      NUM_LIT NUM_LIT NUM_LIT
-                      NUM_LIT NUM_LIT NUM_LIT
-    {
-      objstream::camera c($2, atof($3));
-      c.fp() [0] = atof($4);  c.fp() [1] = atof($5);  c.fp() [2] = atof($6);
-      c.vpn()[0] = atof($7);  c.vpn()[1] = atof($8);  c.vpn()[2] = atof($9);
-      c.vup()[0] = atof($10); c.vup()[1] = atof($11); c.vup()[2] = atof($12);
-      dest->cam($2) = c;
-    }
-    
-  | LIGHT NUM_LIT NUM_LIT NUM_LIT NUM_LIT NUM_LIT NUM_LIT NUM_LIT
-    {
-      objstream::light* l = new objstream::light();
-      
-      l->poss()[0] = atof($2); l->poss()[1] = atof($3);
-      l->poss()[2] = atof($4); l->poss()[3] = atof($5);
-      
-      l->illu()[0] = atof($6); l->illu()[1] = atof($7); l->illu()[2] = atof($8);
-      
-      dest->push_l(l);
-    }
-    
-  | MATERIAL STRING_LIT NUM_LIT NUM_LIT NUM_LIT NUM_LIT NUM_LIT NUM_LIT
-    {
-      objstream::material m($2);
-      
-      m.rgb()[0] = atof($3); m.rgb()[1] = atof($4); m.rgb()[2] = atof($5);
-      m.s() = atof($6);
-      m.t() = atof($8);
-      m.alpha() = atof($7);
-      
-      dest->mat($2) = m;
-    }
-    
-  | WIREFRAME STRING_LIT NUM_LIT NUM_LIT NUM_LIT NUM_LIT
-    {
-      objstream::view* w = new objstream::view($2);
-      
-      w->minx() = atoi($3);
-      w->miny() = atoi($4);
-      w->maxx() = atoi($5);
-      w->maxy() = atoi($6);
-      
-      w->type() = objstream::view::wireframe;
-    
-      dest->push(w);
-    }
-    
-  | SHADER STRING_LIT NUM_LIT NUM_LIT NUM_LIT NUM_LIT
-    {
-	  objstream::view* s = new objstream::view($2);
-      
-      s->minx() = atoi($3);
-      s->miny() = atoi($4);
-      s->maxx() = atoi($5);
-      s->maxy() = atoi($6);
-      
-      s->type() = objstream::view::shader;
-    
-      dest->push(s);
-    }
-    
-  | TRACER STRING_LIT NUM_LIT NUM_LIT NUM_LIT NUM_LIT
-    {
-      objstream::view* t = new objstream::view($2);
-      
-      t->minx() = atoi($3);
-      t->miny() = atoi($4);
-      t->maxx() = atoi($5);
-      t->maxy() = atoi($6);
-      
-      t->type() = objstream::view::tracer;
-      
-      dest->push(t);
-    }
     
   | USEMTL STRING_LIT
     { mtln = $2; }
     
+  | MTLLIB STRING_LIT
+    { dest->push_mtllib($2); }
+    
   | GROUP STRING_LIT
     { objn = $2; }
+    
+  | NEWMTL STRING_LIT
+    { mtlr = $2; dest->mat(mtlr) = objstream::material(mtlr); }
+    
+  | PHONG NUM_LIT
+    { dest->mat(mtlr).phong() = atof($2); }  
+    
+  | ILLUM NUM_LIT
+    { dest->mat(mtlr).illum() = atoi($2); }
+    
+  | KAMBIENT NUM_LIT NUM_LIT NUM_LIT
+    {
+      dest->mat(mtlr).ka()[0] = atof($2);
+      dest->mat(mtlr).ka()[1] = atof($3);
+      dest->mat(mtlr).ka()[2] = atof($4);
+    }
+    
+  | KDIFFUSE NUM_LIT NUM_LIT NUM_LIT
+    {
+      dest->mat(mtlr).kd()[0] = atof($2);
+      dest->mat(mtlr).kd()[1] = atof($3);
+      dest->mat(mtlr).kd()[2] = atof($4);
+    }
+    
+  | KSPECULAR NUM_LIT NUM_LIT NUM_LIT
+    {
+      dest->mat(mtlr).ks()[0] = atof($2);
+      dest->mat(mtlr).ks()[1] = atof($3);
+      dest->mat(mtlr).ks()[2] = atof($4);
+    }
 ;
 
 exprlist:

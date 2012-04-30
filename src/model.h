@@ -50,8 +50,7 @@ namespace ray {
   class light {
     public:
 
-      light(const obj::objstream::light& l) :
-        _illumination(l.illu()), _position(l.poss()) { }
+      light() : _illumination(), _position() { }
 
       inline ray::vector  illumination() const { return _illumination; }
       inline ray::vector& illumination()       { return _illumination; }
@@ -113,11 +112,12 @@ namespace ray {
       typedef std::vector<light>::      iterator       l_iterator;
       typedef std::vector<light>::const_iterator l_const_iterator;
 
+      const static std::string default_mat_name;
+
       model();
       virtual ~model();
 
       void build(const obj::objstream& src);
-      void cmd(  const obj::objstream& src);
 
       inline       l_iterator l_begin()       { return _lights.begin(); }
       inline       l_iterator l_end()         { return _lights.end();   }
@@ -134,6 +134,15 @@ namespace ray {
       inline const_reverse_iterator rend()   const { return _objects.rend();   }
 
       material& mat(const std::string& name);
+
+      ray::vector center() const;
+      double dimension(int dim) const;
+
+      inline double  width() const { return dimension(X); }
+      inline double height() const { return dimension(Y); }
+      inline double  depth() const { return dimension(Z); }
+
+      inline void push_light(light l) { _lights.push_back(l); }
 
       ray::vector reflectance(vector p, vector v, vector n,
           const surface* s, bool shadows = true);

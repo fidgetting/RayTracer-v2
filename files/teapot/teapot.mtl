@@ -1,0 +1,9 @@
+# material file for the teapot
+
+newmtl red
+Ka 0.0  0.0  0.0
+Kd 0.0  0.2  0.5
+Ks 0.49 0.49 0.49
+Ns 50.0
+illum 0
+

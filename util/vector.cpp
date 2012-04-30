@@ -145,19 +145,51 @@ ray::vector& ray::vector::operator+=(const vector& rhs) {
 }
 
 /**
- * Adds a scalr to a vector
+ * Subtracts another vector from this one
+ *
+ * @param rhs the other vector
+ * @return this
+ */
+ray::vector& ray::vector::operator-=(const vector& rhs) {
+  for(int i = 0; i < V_SIZE - 1; i++) {
+    data[i] -= rhs[i];
+  }
+  return *this;
+}
+
+/**
+ * Adds a scalar to a vector
  *
  * @param rhs the scalar
  * @return this
  */
-ray::vector& ray::vector::operator+=(const double& rhs) {
+ray::vector& ray::vector::operator+=(double rhs) {
   for(int i = 0; i < V_SIZE - 1; i++) {
     data[i] += rhs;
   }
   return *this;
 }
 
-ray::vector& ray::vector::operator/=(const double& rhs) {
+/**
+ * Subtracts a scalar from a vector
+ *
+ * @param rhs the scalar
+ * @return this
+ */
+ray::vector& ray::vector::operator-=(double rhs) {
+  for(int i = 0; i < V_SIZE - 1; i++) {
+    data[i] -= rhs;
+  }
+  return *this;
+}
+
+/**
+ * Divides every element of a vector by a scalar
+ *
+ * @param rhs the scalar
+ * @return this
+ */
+ray::vector& ray::vector::operator/=(double rhs) {
   for(int i = 0; i < V_SIZE - 1; i++) {
     data[i] /= rhs;
   }
@@ -286,8 +318,6 @@ ray::vector operator+(const ray::vector& lhs, const ray::vector& rhs) {
 
   return ret;
 }
-
-
 
 
 

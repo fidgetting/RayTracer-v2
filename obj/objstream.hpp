@@ -300,20 +300,26 @@ namespace obj {
 
           inline std::string   name() const { return _name;  }
           inline std::string&  name()       { return _name;  }
-          inline ray::vector    rgb() const { return _rgb;   }
-          inline ray::vector&   rgb()       { return _rgb;   }
-          inline double           s() const { return _s;     }
-          inline double&          s()       { return _s;     }
-          inline double       alpha() const { return _alpha; }
-          inline double&      alpha()       { return _alpha; }
-          inline double           t() const { return _t;     }
-          inline double&          t()       { return _t;     }
+          inline ray::vector     ka() const { return _ka;    }
+          inline ray::vector&    ka()       { return _ka;    }
+          inline ray::vector     kd() const { return _kd;    }
+          inline ray::vector&    kd()       { return _kd;    }
+          inline ray::vector     ks() const { return _ks;    }
+          inline ray::vector&    ks()       { return _ks;    }
+          inline double       phong() const { return _phong; }
+          inline double&      phong()       { return _phong; }
+          inline uint8_t      illum() const { return _illum; }
+          inline uint8_t&     illum()       { return _illum; }
 
         private:
 
           std::string _name;
-          ray::vector _rgb;
-          double _s, _alpha, _t;
+          ray::vector _ka;
+          ray::vector _kd;
+          ray::vector _ks;
+          double      _phong;
+          uint8_t     _illum;
+
       };
 
       /* ******************************************************************** */
@@ -337,6 +343,8 @@ namespace obj {
       inline void push_v(const    vertex& v) { _verts.push_back(v); }
       inline void push_t(const   texture& t) { _texts.push_back(t); }
       inline void push_n(const    vertex& n) { _norms.push_back(n); }
+
+      inline void push_mtllib(const std::string& str) { _libs.push_back(str); }
 
       inline const  vertex& v_at(unsigned int i) const { return _verts.at(i); }
       inline const texture& t_at(unsigned int i) const { return _texts.at(i); }
@@ -383,7 +391,6 @@ namespace obj {
       inline m_const_iterator m_end()   const { return _materials.end();   }
 
       inline const std::string& src_file() const { return _fname;  }
-      inline const std::string& mat_file() const { return _matlib; }
 
       inline void push(view* v) { _views.push_back(v); }
       inline void push_l(light* l) { _lights.push_back(l); }
@@ -411,8 +418,8 @@ namespace obj {
       std::map<std::string, material> _materials;
       std::vector<view*>              _views;
       std::vector<light*>             _lights;
-      std::string                     _matlib;
       std::string                     _fname;
+      std::vector<std::string>        _libs;
   };
 }
 

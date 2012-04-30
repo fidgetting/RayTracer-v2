@@ -16,6 +16,9 @@
 #include <exception>
 #include <fstream>
 
+#include <boost/filesystem.hpp>
+namespace fs=boost::filesystem;
+
 extern int yyparse(void);
 extern FILE* yyin;
 
@@ -126,19 +129,32 @@ obj::objstream::group::~group() {
  * @param f_name obj file name
  */
 obj::objstream::objstream(const std::string& f_name) : _fname(f_name) {
-  /* open the file and place it in yyin */
-  if(!(yyin = fopen(f_name.c_str(), "r")))
-    throw std::exception();
-
   /* the parser will place everything directly in the objstream. Set a *
    * pointer so that it can do this correctly                          */
   dest = this;
 
-  /* parse the close the input file */
+  /* make a path object out of the file */
+  fs::path file(f_name);
+
+  /* open the file and parse it */
+  if(!(yyin = fopen(f_name.c_str(), "r")))
+    throw std::exception();
   yyparse();
   fclose(yyin);
+
+  /* open and parse all the mtllib files */
+  for(std::string& str : _libs) {
+    if(!(yyin = fopen((file.parent_path() / str).c_str(), "r")))
+      throw std::exception();
+
+    yyparse();
+    fclose(yyin);
+  }
 }
 
+/**
+ * TODO
+ */
 obj::objstream::~objstream() {
   for(auto iter = _views.begin(); iter != _views.end(); iter++) {
     delete (*iter);

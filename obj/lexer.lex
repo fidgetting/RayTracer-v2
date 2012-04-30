@@ -20,16 +20,16 @@
 #ifdef DEBUG
 #define yyposs_inc      yyposs += strlen(yytext); std::cout << yytext;
 #define yyposs_ret(ret) yyposs += strlen(yytext); std::cout <<  "[" << yytext \
-                        << "," << ret << "]"; return ret;
+                        << "," << ret << "]"; return ret
 #else
-#define yyposs_inc      yyposs += strlen(yytext);
-#define yyposs_ret(ret) yyposs += strlen(yytext); return ret;
+#define yyposs_inc      yyposs += strlen(yytext)
+#define yyposs_ret(ret) yyposs += strlen(yytext); return ret
 #endif
 
 %}
 
 num [0-9]
-not_num [a-zA-Z_~\(\)]
+not_num [a-zA-Z_~\(\).]
 id  {not_num}({not_num}|{num}){2,}
 eol (\n|\r|\r\n)
 ws  ([ \t])+
@@ -39,7 +39,10 @@ float -?{num}+(\.{num}+)?
 %%
 
 
-"usemtl" { yyposs_ret(USEMTL)     }
+"usemtl" { yyposs_ret(USEMTL);    }
+"newmtl" { yyposs_ret(NEWMTL);    }
+"mtllib" { yyposs_ret(MTLLIB);    }
+"illum"  { yyposs_ret(ILLUM);     }
 
 {float}  { strcpy(yylval.str_t, yytext); yyposs_ret(NUM_LIT); }
 {id}     { strcpy(yylval.str_t, yytext); yyposs_ret(STRING_LIT); }
@@ -50,16 +53,11 @@ float -?{num}+(\.{num}+)?
 "vn"     { yyposs_ret(NORMAL);    }
 "f"      { yyposs_ret(FACE);      }
 "/"      { yyposs_ret(SLASH);     }
-"r"      { yyposs_ret(ROTATE);    }
-"t"      { yyposs_ret(TRANSLATE); }
-"s"      { yyposs_ret(SCALE);     }
-"a"      { yyposs_ret(ARBITRARY); }
-"c"      { yyposs_ret(CAMERA);    }
-"w"      { yyposs_ret(WIREFRAME); }
-"l"      { yyposs_ret(LIGHT);     }
-"m"      { yyposs_ret(MATERIAL);  }
-"gr"     { yyposs_ret(SHADER);    }
-"rt"     { yyposs_ret(TRACER);    }
+
+"Ka"     { yyposs_ret(KAMBIENT);  }
+"Kd"     { yyposs_ret(KDIFFUSE);  }
+"Ks"     { yyposs_ret(KSPECULAR); }
+"Ns"     { yyposs_ret(PHONG);     }
 
 {comment}   { yyposs_inc; }
 {ws}        { yyposs_inc; }

@@ -26,11 +26,11 @@ int  ray::model::vertex_spheres;
  * Creates a material based upon the material read from the input file
  */
 ray::material::material(const obj::objstream::material& mat) :
-    _name(mat.name()), _ks(mat.s()), _alpha(mat.alpha()), _kt(mat.t()),
+    _name(mat.name()), _ks(mat.ks()[0]), _alpha(mat.phong()), _kt(0.0),
     _diffuse(ray::identity<4>()) {
-  _diffuse[0][0] = mat.rgb()[0];
-  _diffuse[1][1] = mat.rgb()[1];
-  _diffuse[2][2] = mat.rgb()[2];
+  _diffuse[0][0] = mat.kd()[0];
+  _diffuse[1][1] = mat.kd()[1];
+  _diffuse[2][2] = mat.kd()[2];
 }
 
 /**
@@ -78,7 +78,7 @@ ray::object::object(const object& cpy) :
  * TODO
  */
 ray::object::~object() {
-  //delete[] _data;
+  delete[] _data;
   //delete   _root;
 }
 
@@ -171,6 +171,8 @@ void ray::object::operator *=(const ray::matrix<4, 4>& mat) {
 /* *** model **************************************************************** */
 /* ************************************************************************** */
 
+const std::string ray::model::default_mat_name = "default_material_name";
+
 /**
  * Basic constructor for the model class
  */
@@ -195,6 +197,15 @@ void ray::model::build(const obj::objstream& src) {
   typedef obj::objstream src_t;
   ray::triangle* t;
   int size;
+  ray::material def;
+
+  def.ks()    = 0.25;
+  def.alpha() = 10.0;
+  def.kt()    = 0.0;
+  def.diffuse() = ray::identity<4>() * 0.75;
+  def.diffuse()[3][3] = 1;
+  def.name() = model::default_mat_name;
+  _materials[def.name()] = def;
 
   if((size = src.n_size()) == 0) {
     model::smooth_shading = false;
@@ -238,55 +249,12 @@ void ray::model::build(const obj::objstream& src) {
     }
 
     _objects[iter->first] = obj;
-  }
-}
 
-/**
- * TODO
- *
- * @param src
- */
-void ray::model::cmd(const obj::objstream& src) {
-  typedef obj::objstream src_t;
-  ray::sphere* sphere;
-
-  if(vertex_spheres) {
-    obj::objstream::material mat;
-    mat.name() = "vertex_sphere_color";
-    mat.rgb() = ray::vector(0, 0.5, 0);
-    mat.s() = 0.49;
-    mat.alpha() = 168;
-    _materials["vertex_sphere_color"] = mat;
+    obj->root()->split();
+    obj->root()->compute_bbox();
   }
 
-  for(src_t::const_iterator iter = src.begin(); iter != src.end(); iter++) {
-    object& obj = *_objects[iter->first];
-    ray::matrix<4, 4> tran = ray::identity<4>();
-
-    if(ray::model::vertex_spheres) {
-      for(unsigned int i = 0; i < obj.v_size(); i++) {
-        sphere = new ray::sphere(obj[i], model::vertex_spheres);
-        sphere->material() = "vertex_sphere_color";
-        obj.root()->push(sphere);
-      }
-    }
-
-    for(src_t::group::transform_iterator ti = iter->second.tran_begin();
-        ti != iter->second.tran_end(); ti++) {
-      tran *= (*ti)->matrix();
-    }
-
-    obj *= tran;
-
-    obj.root()->split();
-    obj.root()->compute_bbox();
-  }
-
-  for(src_t::l_const_iterator iter = src.l_begin(); iter != src.l_end(); iter++) {
-    _lights.push_back(**iter);
-  }
-
-  for(src_t::m_const_iterator iter = src.m_begin(); iter != src.m_end(); iter++) {
+  for(auto iter = src.m_begin(); iter != src.m_end(); iter++) {
     _materials[iter->first] = iter->second;
   }
 }
@@ -299,8 +267,43 @@ void ray::model::cmd(const obj::objstream& src) {
  */
 ray::material& ray::model::mat(const std::string& name) {
   if(_materials.find(name) == _materials.end())
-    throw std::exception();
+    return _materials[model::default_mat_name];
   return _materials[name];
+}
+
+/**
+ * TODO
+ *
+ * @return
+ */
+ray::vector ray::model::center() const {
+  ray::vector ret;
+
+  for(auto iter = begin(); iter != end(); iter++) {
+    ret += iter->second->root()->center();
+  }
+
+  ret /= _objects.size();
+  return ret;
+}
+
+/**
+ * TODO
+ *
+ * @return
+ */
+double ray::model::dimension(int dim) const {
+  double min = std::numeric_limits<double>::max();
+  double max = std::numeric_limits<double>::min();
+
+  for(auto iter = begin(); iter != end(); iter++) {
+    ray::bbox curr = iter->second->root()->bounds();
+
+    min = std::min(min, curr.min()[dim]);
+    max = std::max(min, curr.max()[dim]);
+  }
+
+  return max - min;
 }
 
 /**

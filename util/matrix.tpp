@@ -172,7 +172,7 @@ namespace ray {
    * @return a new matrix that is the multiplication of the other two
    */
   template<int R, int RC, int C>
-  matrix<R, C> mult(const matrix<R, RC>& lhs, const matrix<RC, C>& rhs) {
+  static matrix<R, C> mult(const matrix<R, RC>& lhs, const matrix<RC, C>& rhs) {
     matrix<R, C> ret;
 
     for(int i = 0; i < R; i++) {
@@ -234,6 +234,25 @@ namespace ray {
     return *this;
   }
 
+  /**
+   * Mutiply a matrix my a scalar
+   *
+   * @param lhs  the matrix
+   * @param rhs  the scalar
+   * @return  the matrix multiplied by the scalar
+   */
+  template<int R, int C>
+  matrix<R, C> operator*(const matrix<R, C>& lhs, double rhs) {
+    matrix<R, C> ret;
+
+    for(int i = 0; i < R; i++) {
+      for(int j = 0; j < C; j++) {
+        ret[i][j] = lhs[i][j] * rhs;
+      }
+    }
+
+    return ret;
+  }
 }
 
 #endif /* MATRIX_H_INCLUDE */

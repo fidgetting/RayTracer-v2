@@ -57,8 +57,12 @@ namespace ray {
       void negate();
       void normalize(bool to_w = false);
       vector& operator+=(const vector& v);
-      vector& operator+=(const double& d);
-      vector& operator/=(const double& d);
+      vector& operator-=(const vector& v);
+
+      vector& operator+=(double d);
+      vector& operator-=(double d);
+
+      vector& operator/=(double d);
 
       vector  operator*(const vector& rhs) const;
       vector  operator*(double d)          const;

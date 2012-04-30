@@ -22,13 +22,13 @@
 #include <cxcore.h>
 #include <highgui.h>
 
-#define DEBUG
+#define DEBUG 1
 
 namespace ray {
 
   class camera {
     public:
-      camera(const obj::objstream::camera& src);
+      camera(ray::model& mod);
       ~camera() { };
 
       enum axis {
@@ -36,6 +36,9 @@ namespace ray {
         y_axis = 1,
         z_axis = 2
       };
+
+      const static int height;
+      const static int width;
 
       inline ray::vector&    fp()         { return _fp;   }
       inline ray::vector     fp()   const { return _fp;   }
@@ -49,25 +52,22 @@ namespace ray {
       inline ray::vector     v()    const { return _v;    }
       inline double&         fl()         { return _fl;   }
       inline double          fl()   const { return _fl;   }
-      inline int&            umin()       { return _umin; }
-      inline int             umin() const { return _umin; }
-      inline int&            umax()       { return _umax; }
-      inline int             umax() const { return _umax; }
-      inline int&            vmin()       { return _vmin; }
-      inline int             vmin() const { return _vmin; }
-      inline int&            vmax()       { return _vmax; }
-      inline int             vmax() const { return _vmax; }
-
-      inline int  width() const { return _umax - _umin; }
-      inline int height() const { return _vmax - _vmin; }
+      inline double&         umin()       { return _umin; }
+      inline double          umin() const { return _umin; }
+      inline double&         umax()       { return _umax; }
+      inline double          umax() const { return _umax; }
+      inline double&         vmin()       { return _vmin; }
+      inline double          vmin() const { return _vmin; }
+      inline double&         vmax()       { return _vmax; }
+      inline double          vmax() const { return _vmax; }
 
       void translate(double amount, axis which);
       void rotate(double amount, ray::vector around, axis which);
-      void draw_proj(model* m, cv::Mat& dst, cv::Mat& zbuffer);
+      void draw_proj(model& m, cv::Mat& dst, cv::Mat& zbuffer);
 
       std::vector<double> point_z(const object& obj);
 
-      void click(model* m, cv::Mat& dst);
+      cv::Mat click(model& m);
       matrix<4, 4> projection() const;
       matrix<4, 4> rotation() const;
 
@@ -87,8 +87,8 @@ namespace ray {
       ray::vector _fp, _vrp;
       ray::vector _n, _u, _v;
       double _fl;
-      int _umin, _umax;
-      int _vmin, _vmax;
+      double _umin, _umax;
+      double _vmin, _vmax;
   };
 
   class display {
@@ -109,9 +109,10 @@ namespace ray {
         left = 1,
         right = 2,
         middle = 3,
+        ray = 4
       };
 
-      display(ray::model* m, ray::camera* cam, bool wire = true);
+      display(ray::model& m, ray::camera& cam, bool wire = true);
 
       void show();
       void exec();

@@ -53,6 +53,8 @@ namespace ray {
       bool contains(const ray::bbox& box) const;
       bool intersection(const ray_info& ray) const;
 
+      ray::vector center() const;
+
     protected:
 
       ray::vector _min;
@@ -70,6 +72,8 @@ namespace ray {
           const surface* skip, vector& I, double& r, vector& n) const = 0;
       virtual void fill(model* m, const camera* cam, ray::object& obj,
           cv::Mat& dst, cv::Mat& z_buf, const std::vector<double> z_vals) const = 0;
+
+      inline virtual ray::vector center() const { return _bounds.center(); }
 
       inline std::string&     material()       { return _material; }
       inline std::string      material() const { return _material; }
@@ -118,8 +122,8 @@ namespace ray {
       sphere(const ray::vector& _center, double _radius);
       virtual ~sphere() { };
 
-      inline ray::vector& center()       { return _center; }
-      inline ray::vector  center() const { return _center; }
+      /*inline ray::vector& center()       { return _center; }
+      inline ray::vector  center() const { return _center; }*/
       inline double&      radius()       { return _radius; }
       inline double       radius() const { return _radius; }
 
