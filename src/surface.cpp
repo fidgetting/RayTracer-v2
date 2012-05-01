@@ -725,6 +725,15 @@ void ray::triangle::fill(model* m, const camera* cam, ray::object& obj,
   int ymin, ymax;
   int s, e, i;
 
+  for(int i = 0; i < 3; i++) {
+    ray::vector curr = (*this)[i];
+    curr = cam->fp() - curr;
+
+    if(curr.dot(_owner.norm(_n_idx[i])) < 0)
+      return;
+  }
+
+
   ymin = std::ceil (min3(Y_CORD(obj, 0), Y_CORD(obj, 1), Y_CORD(obj, 2)));
   ymax = std::floor(max3(Y_CORD(obj, 0), Y_CORD(obj, 1), Y_CORD(obj, 2)));
   if(ymax < 0 || ymin > dst.rows) return;
