@@ -78,8 +78,6 @@ namespace ray {
 
 #ifdef DEBUG
       static bool print;
-#else
-      static int running;
 #endif
 
     private:

@@ -15,12 +15,13 @@ CXX     = g++
 CFLAGS  = -g -Wall -O3 -std=c++0x
 INCPATH = -I.
 
-OBJS = $(BIN_DIR)/vector.o \
-
+OBJS = $(BIN_DIR)/vector.o     \
+       $(BIN_DIR)/threadpool.o \
 
 HEAD = Makefile               \
        matrix.tpp             \
        vector.h               \
+       threadpool.hpp         \
 
 all: $(OBJS)
 

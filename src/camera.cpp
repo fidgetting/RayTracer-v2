@@ -7,7 +7,7 @@
 
 #include <surface.h>
 #include <camera.h>
-#include <queue.tpp>
+#include <threadpool.hpp>
 
 #include <algorithm>
 #include <cmath>
@@ -39,16 +39,6 @@ bool ray::camera::animation = false;
 
 #ifdef DEBUG
 bool ray::camera::print = false;
-#else
-int ray::camera::running = 0;
-
-ray::concurrent_queue<ray::l_ray> rays;
-
-void wrapper() {
-  rays.worker();
-  ray::camera::running--;
-}
-
 #endif
 
 /**
@@ -218,16 +208,8 @@ cv::Mat ray::camera::click(model& m) {
   cv::Mat dst = cv::Mat::zeros(height, width, CV_8UC3);
 
 #ifndef DEBUG
-  ray::l_ray* curr;
-  int n_thread = std::max(int(std::thread::hardware_concurrency()- 1), 3);
-  std::vector<std::thread*> threads;
-
-  rays.start();
-
-  for(int i = 0; i < n_thread; i++) {
-    running++;
-    threads.push_back(new std::thread(wrapper));
-  }
+  int nthread = std::max(int(std::thread::hardware_concurrency()- 1), 3);
+  ray::threadpool workers(nthread, 1000);
 #endif
 
   /* two different versions of this function can be compiled.
@@ -266,16 +248,12 @@ cv::Mat ray::camera::click(model& m) {
     }
   }
 #else
-      rays.push((curr = new ray::l_ray(&m, L, U,
-          dst.at<cv::Vec<uc, 3> >(y, x))));
+      workers.put(ray::l_ray(&m, L, U,
+          dst.at<cv::Vec<uc, 3> >(y, x)));
     }
   }
 
-  rays.stop();
-
-  for(int i = 0; i < n_thread; i++) {
-    threads[i]->join();
-  }
+  workers.join();
 #endif
 
   return dst;

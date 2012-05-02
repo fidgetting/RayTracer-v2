@@ -33,7 +33,7 @@ HEAD = Makefile               \
        ../obj/objstream.hpp   \
        ../util/vector.h       \
        ../util/matrix.tpp     \
-       ../util/queue.tpp      \
+       ../util/threadpool.hpp \
 
 all: $(EXE)
 $(EXE): $(OBJS) $(BIN_DIR)/*.o $(HEAD)
