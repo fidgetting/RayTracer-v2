@@ -1,0 +1,272 @@
+/*
+ * Vector.cpp
+ *
+ *  Created on: Dec 24, 2012
+ *      Author: norton
+ */
+
+/* local includes */
+#include <Vector.hpp>
+
+/* std includes */
+#include <iostream>
+#include <iomanip>
+#include <ios>
+
+namespace ray {
+
+  /**
+   * Trivial constructor for the Vector class.
+   */
+  CUDA_CALL Vector::Vector() :
+    data() { data[0] = data[1] = data[2] = 0; data[3] = 1.0; }
+
+  /**
+   * Constructs a Vector with all the same starting value;
+   *
+   * @param d  the Vector to be created;
+   */
+  CUDA_CALL Vector::Vector(double d) :
+    data() { data[0] = data[1] = data[2] = d; data[3] = 1.0; }
+
+  /**
+   * Basic constructor that sets the x, y, and z values of the Vector. The w
+   * value will be set to 1.0.
+   *
+   * @param x  the x coordinate of the Vector
+   * @param y  the y coordinate of the Vector
+   * @param z  the z coordinate of the Vector
+   */
+  CUDA_CALL Vector::Vector(double x, double y, double z, double w) :
+    data() { data[0] = x; data[1] = y; data[2] = z; data[3] = w; }
+
+  /**
+   * Calculate the Vector in the opposite direction.
+   *
+   * @return  a new Vector in exactly the opposite direction
+   */
+  CUDA_CALL Vector Vector::negate() const {
+    return Vector(-x(), -y(), -z());
+  }
+
+  /**
+   * Calculate a new Vector going the same direction with length of 1.
+   *
+   * @return  the new Vector of length 1
+   */
+  CUDA_CALL Vector Vector::normalize() const {
+    double len = length();
+    return Vector(
+        x() / len,
+        y() / len,
+        z() / len);
+  }
+
+  /**
+   * Gets a Vector that is perpendicular to this Vector.
+   *
+   * @return  the new Vector
+   */
+  CUDA_CALL Vector Vector::getPerpendicular() const {
+    Vector ret = *this;
+
+    ret.data[0] += 10;
+
+    return cross(*this, ret).normalize();
+  }
+
+  /**
+   * Calculate the distance between two Vectors
+   *
+   * @param rhs  The other Vector
+   * @return     The distance between the two Vectors
+   */
+  CUDA_CALL double Vector::distance(const Vector& rhs) const {
+    return ((*this) - rhs).length();
+  }
+
+  /**
+   * Calculate the length of the Vector.
+   *
+   * @return  The double length of the Vector
+   */
+  CUDA_CALL double Vector::length() const {
+    return sqrt(
+        x() * x() +
+        y() * y() +
+        z() * z());
+  }
+
+  /**
+   * Calculate the element wise addition of the two Vectors.
+   *
+   * @param lhs  Vector on the left hand side of the operator
+   * @param rhs  Vector on the right hand side of the operator
+   * @return     new Vector that is the element wise addition.
+   */
+  CUDA_CALL Vector operator +(const Vector& lhs, const Vector& rhs) {
+    return Vector(
+        lhs.x() + rhs.x(),
+        lhs.y() + rhs.y(),
+        lhs.z() + rhs.z());
+  }
+
+  /**
+   * Calculate the addition of a Vector and a scalar
+   *
+   * @param lhs  Vector on the left hand side of the operator
+   * @param rhs  double on the right hand side of the operator
+   * @return     new Vector that is the scalar addition.
+   */
+  CUDA_CALL Vector operator +(const Vector& lhs, const double rhs) {
+    return Vector(
+        lhs.x() + rhs,
+        lhs.y() + rhs,
+        lhs.z() + rhs);
+  }
+
+  /**
+   * Calculate the element wise subtraction of the two Vectors.
+   *
+   * @param lhs  Vector on the left hand side of the operator
+   * @param rhs  Vector on the right hand side of the operator
+   * @return     new Vector that is the element wise subtraction.
+   */
+  CUDA_CALL Vector operator -(const Vector& lhs, const Vector& rhs) {
+    return Vector(
+        lhs.x() - rhs.x(),
+        lhs.y() - rhs.y(),
+        lhs.z() - rhs.z());
+  }
+
+  /**
+   * Calculate the subtraction of a Vector and a scalar
+   *
+   * @param lhs  Vector on the left hand side of the operator
+   * @param rhs  double on the right hand side of the operator
+   * @return     new Vector that is the scalar subtraction.
+   */
+  CUDA_CALL Vector operator -(const Vector& lhs, const double rhs) {
+    return Vector(
+        lhs.x() - rhs,
+        lhs.y() - rhs,
+        lhs.z() - rhs);
+  }
+
+  /**
+   * Calculate the element wise multiplication of the two Vectors.
+   *
+   * @param lhs  Vector on the left hand side of the operator
+   * @param rhs  Vector on the right hand side of the operator
+   * @return     new Vector that is the element wise multiplication.
+   */
+  CUDA_CALL Vector operator *(const Vector& lhs, const Vector& rhs) {
+    return Vector(
+        lhs.x() * rhs.x(),
+        lhs.y() * rhs.y(),
+        lhs.z() * rhs.z());
+  }
+
+  /**
+   * Calculate the multiplication of a Vector and a scalar
+   *
+   * @param lhs  Vector on the left hand side of the operator
+   * @param rhs  double on the right hand side of the operator
+   * @return     new Vector that is the scalar multiplication.
+   */
+  CUDA_CALL Vector operator *(const Vector& lhs, const double rhs) {
+    return Vector(
+        lhs.x() * rhs,
+        lhs.y() * rhs,
+        lhs.z() * rhs);
+  }
+
+  /**
+   * Calculate the element wise division of the two Vectors.
+   *
+   * @param lhs  Vector on the left hand side of the operator
+   * @param rhs  Vector on the right hand side of the operator
+   * @return     new Vector that is the element wise division.
+   */
+  CUDA_CALL Vector operator /(const Vector& lhs, const Vector& rhs) {
+    return Vector(
+        lhs.x() / rhs.x(),
+        lhs.y() / rhs.y(),
+        lhs.z() / rhs.z());
+  }
+
+  /**
+   * Calculate the division of a Vector and a scalar
+   *
+   * @param lhs  Vector on the left hand side of the operator
+   * @param rhs  double on the right hand side of the operator
+   * @return     new Vector that is the scalar division.
+   */
+  CUDA_CALL Vector operator /(const Vector& lhs, const double rhs) {
+    return Vector(
+        lhs.x() / rhs,
+        lhs.y() / rhs,
+        lhs.z() / rhs);
+  }
+
+  /**
+   * Element-wise max of two Vectors.
+   *
+   * @param lhs  the lhs of the max operator
+   * @param rhs  the rhs of the max operator
+   * @return     new Vector that is the element-wise max
+   */
+  CUDA_CALL Vector max(const Vector& lhs, const Vector& rhs) {
+    return Vector(
+        ray::max(lhs.x(), rhs.x()),
+        ray::max(lhs.y(), rhs.y()),
+        ray::max(lhs.z(), rhs.z()));
+  }
+
+  /**
+   * Element-wise min of two Vectors.
+   *
+   * @param lhs  the lhs of the max operator
+   * @param rhs  the rhs of the max operator
+   * @return     new Vector that is the element-wise min
+   */
+  CUDA_CALL Vector min(const Vector& lhs, const Vector& rhs) {
+    return Vector(
+        ray::min(lhs.x(), rhs.x()),
+        ray::min(lhs.y(), rhs.y()),
+        ray::min(lhs.z(), rhs.z()));
+  }
+
+  /**
+   * Element-wise max of a Vector and real number
+   *
+   * @param lhs  the Vector
+   * @param rhs  the Real number, type double
+   * @return     new Vector that is the element-wise max
+   */
+  CUDA_CALL Vector max(const Vector& lhs, const double& rhs) {
+    return max(lhs, Vector(rhs));
+  }
+
+  /**
+   * Element-wise min of a Vector and real number
+   *
+   * @param lhs  the Vector
+   * @param rhs  the Real number, type double
+   * @return     new Vector that is the element-wise min
+   */
+  CUDA_CALL Vector min(const Vector& lhs, const double& rhs) {
+    return min(lhs, Vector(rhs));
+  }
+
+  __host__ std::ostream& operator<<(std::ostream& ostr, const Vector& vec) {
+    ostr << "(" <<
+        std::setprecision(3) << vec.x() << ", " <<
+        std::setprecision(3) << vec.y() << ", " <<
+        std::setprecision(3) << vec.z() << ")";
+    return ostr;
+  }
+}
+
+
+

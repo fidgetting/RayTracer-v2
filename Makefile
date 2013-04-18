@@ -1,23 +1,11 @@
 
-BIN  = bin
-DIRS = obj src
 
-all: $(BIN)
-	$(MAKE) -C obj
-	$(MAKE) -C util
-	$(MAKE) -C src
+all:
+	$(MAKE) -C ./src all -j`cat /proc/cpuinfo | grep processor | wc -l`
 
-debug: $(BIN)
-	$(MAKE) -C obj  debug
-	$(MAKE) -C util debug
-	$(MAKE) -C src  debug
-
-$(BIN):
-	mkdir $(BIN)
+single:
+	$(MAKE) -C ./src all
 
 clean:
-	$(MAKE) -C obj  clean
-	$(MAKE) -C util clean
-	$(MAKE) -C src  clean
-
+	$(MAKE) -C ./src clean
 

@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (C) 2011 Alex Norton                                              #
+# Copyright (C) 2013 Alex Norton                                              #
 #                                                                             #
 # This program is free software; you can redistribute it and/or modify it     #
 # under the terms of the BSD 2-Clause License.                                #
@@ -11,39 +11,47 @@
 
 BIN_DIR = ../bin
 
-CXX     = g++
-LINK    = g++
-CFLAGS  = -g -O3 -Wall -std=c++0x `pkg-config opencv --cflags`
-INCPATH = -I. -I../obj -I../util
-EXE     = ../model
-LIBS    = `pkg-config opencv --libs` -L/usr/lib -lpthread \
-          -lboost_program_options -lboost_filesystem -lboost_system
+YACC = bison
+LEX  = lex
+LINK = clang++
+CXX  = clang++
+NVCC = clang++
 
-OBJS = $(BIN_DIR)/model.o     \
-       $(BIN_DIR)/surface.o   \
-       $(BIN_DIR)/ray.o       \
-       $(BIN_DIR)/camera.o    \
-       $(BIN_DIR)/main.o      \
+CUFLAGS  = -g -O3
+DISABLED = -Wno-gnu-array-member-paren-init
+CFLAGS   = -Wall -DYY_NO_INPUT -std=c++11 -g -O3  `pkg-config gtkmm-3.0 --cflags`
+INCPATH  = -Iload/ -Imodel/ -Irender/ -Iutil/ -Igui/
+LIBRARY  = -lboost_filesystem -lboost_system -lboost_program_options \
+           -lboost_chrono -lboost_thread `pkg-config gtkmm-3.0 --libs`
 
-HEAD = Makefile               \
-       surface.h              \
-       model.h                \
-       ray.h                  \
-       camera.h               \
-       ../obj/objstream.hpp   \
-       ../util/vector.h       \
-       ../util/matrix.tpp     \
-       ../util/threadpool.hpp \
+EXES = $(patsubst %.cpp, ../%, $(wildcard *.cpp))
+OBJS = $(patsubst %.cpp, %.o, $(wildcard */*.cpp))
+THRU = $(patsubst %.cu, %.o,  $(wildcard */*.cu))
+HEAD = $(wildcard */*.hpp) util/Matrix.tpp
 
-all: $(EXE)
-$(EXE): $(OBJS) $(BIN_DIR)/*.o $(HEAD)
-	$(LINK) -o $(EXE) $(BIN_DIR)/*.o $(INCPATH) $(CFLAGS) $(LIBS)
+all: load/Parser.cpp load/Lexer.cpp 
+	$(MAKE) -C . reload
 
-debug:
-	$(MAKE) all DEF=-DDEBUG
+load/Parser.cpp: load/Parser.y
+	$(YACC) --defines=load/Parser.hpp $< -o $@
 
-$(OBJS) : $(BIN_DIR)/%.o : %.cpp $(HEAD)
-	$(CXX) -c $(DEF) $(INCPATH) $(CFLAGS) $< -o $@
+load/Lexer.cpp: load/Lexer.lex load/Parser.cpp
+	$(LEX) --nounput -o $@ $<
+
+reload: $(EXES)
+$(EXES): ../%: %.cpp $(HEAD) $(OBJS) $(THRU)
+	$(CXX) -c $(INCPATH) $(DISABLED) $(CFLAGS) $< -o $*.o
+	$(LINK) $(OBJS) $(THRU) $*.o $(LIBRARY) -o $@
+
+$(OBJS): %.o: %.cpp $(HEAD) Makefile
+	$(CXX) -c $(INCPATH) $(DISABLED) $(CFLAGS) $(DEF) $< -o $@
+
+$(THRU): %.o: %.cu $(HEAD) Makefile
+	$(NVCC) -c $(INCPATH) $(CUFLAGS) $< -o $@
 
 clean:
-	rm -f $(EXE) $(OBJS)
+	rm -f $(OBJS)
+	rm -f load/Parser.cpp
+	rm -f load/Parser.hpp
+	rm -f load/Lexer.cpp
+	rm -f $(EXES)
