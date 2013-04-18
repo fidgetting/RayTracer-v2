@@ -25,6 +25,7 @@ LIBRARY  = -lboost_filesystem -lboost_system -lboost_program_options \
            -lboost_chrono -lboost_thread `pkg-config gtkmm-3.0 --libs`
 
 EXES = $(patsubst %.cpp, ../%, $(wildcard *.cpp))
+EOBJ = $(patsubst ../%, %.o, $(EXES))
 OBJS = $(patsubst %.cpp, %.o, $(wildcard */*.cpp))
 THRU = $(patsubst %.cu, %.o,  $(wildcard */*.cu))
 HEAD = $(wildcard */*.hpp) util/Matrix.tpp
@@ -39,8 +40,7 @@ load/Lexer.cpp: load/Lexer.lex load/Parser.cpp
 	$(LEX) --nounput -o $@ $<
 
 reload: $(EXES)
-$(EXES): ../%: %.cpp $(HEAD) $(OBJS) $(THRU)
-	$(CXX) -c $(INCPATH) $(DISABLED) $(CFLAGS) $< -o $*.o
+$(EXES): ../%: %.cpp $(HEAD) $(OBJS) $(EOBJ) $(THRU)
 	$(LINK) $(OBJS) $(THRU) $*.o $(LIBRARY) -o $@
 
 $(OBJS): %.o: %.cpp $(HEAD) Makefile
@@ -49,9 +49,12 @@ $(OBJS): %.o: %.cpp $(HEAD) Makefile
 $(THRU): %.o: %.cu $(HEAD) Makefile
 	$(NVCC) -c $(INCPATH) $(CUFLAGS) $< -o $@
 
+$(EOBJ): %.o: %.cpp $(HEAD) Makefile
+	$(CXX) -c $(INCPATH) $(DISABLED) $(CFLAGS) $(DEF) $< -o $@
+
 clean:
-	rm -f $(OBJS)
+	rm -f $(OBJS) $(THRU)
 	rm -f load/Parser.cpp
 	rm -f load/Parser.hpp
 	rm -f load/Lexer.cpp
-	rm -f $(EXES)
+	rm -f $(EXES) $(EOBJ)
