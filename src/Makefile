@@ -40,11 +40,7 @@ load/Lexer.cpp: load/Lexer.lex load/Parser.cpp
 	$(LEX) --nounput -o $@ $<
 
 reload: $(EXES)
-<<<<<<< HEAD
-$(EXES): ../%: %.cpp $(HEAD) $(OBJS) $(THRU) $(EOBJ)
-=======
 $(EXES): ../%: %.cpp $(HEAD) $(OBJS) $(EOBJ) $(THRU)
->>>>>>> 7117f6397199059f9c37b073714bbba05baf50df
 	$(LINK) $(OBJS) $(THRU) $*.o $(LIBRARY) -o $@
 
 $(OBJS): %.o: %.cpp $(HEAD) Makefile
