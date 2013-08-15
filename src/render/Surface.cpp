@@ -10,6 +10,7 @@
 #include <Model.hpp>
 #include <Surface.hpp>
 #include <Ray.hpp>
+#include <util.tpp>
 
 /* std includes */
 #include <algorithm>
@@ -277,7 +278,7 @@ namespace ray {
     x = fabs(_norm.x());
     y = fabs(_norm.y());
     z = fabs(_norm.z());
-    switch((d_axis = max_pair(x, 0, y, 1, z, 2))) {
+    switch((d_axis = max_index(x, y, z))) {
       case 0:
         if((vb.y() - vc.y()) * (vb.z() - va.z()) <
            (vb.z() - vc.z()) * (vb.y() - va.y()))
@@ -305,7 +306,7 @@ namespace ray {
     x = fabs(b.x());
     y = fabs(b.y());
     z = fabs(b.z());
-    v_axis = max_pair(x, 0, y, 1, z, 2);
+    v_axis = max_index(x, y, z);
 
     a = vb - vc;
     b = va - vc;
