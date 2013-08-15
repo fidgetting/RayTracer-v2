@@ -137,21 +137,6 @@ namespace ray {
 
     threads.join_all();
 
-    /*Matrix<render::d_Ray> rtmp(rows, cols);
-    Matrix<Vector>        itmp(rows, cols);
-
-    for(int i = 0; i < rows; i++)
-      for(int j = 0; j < cols; j++)
-        rtmp[i][j] = render::d_Ray(rays[i][j]);
-
-    render::Trace(itmp.get(), rtmp.get(), rows * cols);
-
-    for(int i = 0; i < rows; i++)
-      for(int j = 0; j < cols; j++)
-        image[i][j] = Pixel(itmp[i][j]);*/
-
-    //Model::renderSection(rays, image, 0, rows);
-
     return image;
   }
 

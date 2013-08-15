@@ -71,8 +71,12 @@ int main(int argc, char** argv) {
   /* render the image */
   std::string fname = vm["output"].as<std::string>();
 
-  copyOut(model.click(camera, 1024, 1024))->save(
-      vm["output"].as<std::string>(), fname.substr(fname.find('.') + 1));
+  try {
+    copyOut(model.click(camera, 1024, 1024))->save(
+      vm["output"].as<std::string>(), fname.substr(fname.rfind('.') + 1));
+  } catch(Gdk::PixbufError& error) {
+    std::cout << error.what() << std::endl;
+  }
 
   return 0;
 }
