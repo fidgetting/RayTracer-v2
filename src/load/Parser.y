@@ -43,9 +43,6 @@ std::vector<int> faceNorms;
 extern std::vector<std::string> objLibs;
 extern ObjLoader*               objDest;
 
-/* used in expression list */
-int store;
-
 void yyerror(const char* msg) {
   std::cout << msg << " " << yyline << ":" << yyposs << std::endl;
 }
@@ -148,21 +145,21 @@ exprlist:
 
 expr:
     NUM_LIT
-    { store = atoi($1) - 1; faceVerts.push_back(store);
-                            faceTexts.push_back(-1);
-                            faceNorms.push_back(-1);}
+    { faceVerts.push_back(atoi($1) - 1);
+      faceTexts.push_back(-1);
+      faceNorms.push_back(-1);}
   | NUM_LIT SLASH NUM_LIT
-    { store = atoi($1) - 1; faceVerts.push_back(store);
-      store = atoi($3) - 1; faceTexts.push_back(store);
-                            faceNorms.push_back(-1); }
+    { faceVerts.push_back(atoi($1) - 1);
+      faceTexts.push_back(atoi($3) - 1);
+      faceNorms.push_back(-1); }
   | NUM_LIT SLASH NUM_LIT SLASH NUM_LIT
-    { store = atoi($1) - 1; faceVerts.push_back(store);
-      store = atoi($3) - 1; faceTexts.push_back(store);
-      store = atoi($5) - 1; faceNorms.push_back(store); }
+    { faceVerts.push_back(atoi($1) - 1);
+      faceTexts.push_back(atoi($3) - 1);
+      faceNorms.push_back(atoi($5) - 1); }
   | NUM_LIT SLASH SLASH NUM_LIT
-  	{ store = atoi($1) - 1; faceVerts.push_back(store);
-  	                        faceTexts.push_back(-1);
-  	  store = atoi($4) - 1; faceNorms.push_back(store); }
+    { faceVerts.push_back(atoi($1) - 1);
+      faceTexts.push_back(-1);
+      faceNorms.push_back(atoi($4) - 1); }
 ;
 
 %%
