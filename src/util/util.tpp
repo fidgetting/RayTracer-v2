@@ -1,3 +1,11 @@
+/*
+ * RefVector.hpp
+ *
+ *  Created on: Aug 15, 2013
+ *      Author: norton
+ */
+
+#pragma once
 
 namespace detail {
 

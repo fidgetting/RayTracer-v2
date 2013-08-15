@@ -1,5 +1,5 @@
 /*
- * MatrixReference.tpp
+ * RefVector.hpp
  *
  *  Created on: Jan 24, 2013
  *      Author: norton
