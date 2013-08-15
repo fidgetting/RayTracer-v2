@@ -150,12 +150,12 @@ namespace ray {
     _len = base.len();
   }
 
-#define COMPFUNC_DECL(axis) \
-  bool comp_##axis(const Surface::ptr& l, const Surface::ptr& r);
-
-  COMPFUNC_DECL(x)
-  COMPFUNC_DECL(y)
-  COMPFUNC_DECL(z)
+#define COMP_LAMBDA(axis) \
+  [](const Surface::ptr& l, const Surface::ptr& r) {     \
+    auto lb = l->getBounds(), rb = r->getBounds();       \
+    return (lb.min().axis() + (lb.len().axis() / 2.0) <  \
+            rb.min().axis() + (rb.len().axis() / 2.0));  \
+  }
 
   /**
    * Constructs the SurfaceTree using a collection of surfaces. Basically this
@@ -174,10 +174,9 @@ namespace ray {
     } else {
 
       auto seperator = begin + ((end - begin) / 2);
-      auto compfunc =
-          bounds.len().x() > bounds.len().y() ?
-              bounds.len().x() > bounds.len().z() ? comp_x : comp_z :
-              bounds.len().y() > bounds.len().z() ? comp_y : comp_z;
+      auto compfunc = bounds.len().x() > bounds.len().y() ?
+          bounds.len().x() > bounds.len().z() ? COMP_LAMBDA(x) : COMP_LAMBDA(z) :
+          bounds.len().y() > bounds.len().z() ? COMP_LAMBDA(y) : COMP_LAMBDA(z);
 
       std::sort(begin, end, compfunc);
 
@@ -188,5 +187,7 @@ namespace ray {
       children.push_back(b);
     }
   }
+
+#undef COMP_LAMBDA
 
 }

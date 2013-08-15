@@ -182,17 +182,6 @@ namespace ray {
   /* *** Surface Tree ******************************************************* */
   /* ************************************************************************ */
 
-#define COMPFUNC_IMPL(axis)                                        \
-  bool comp_##axis(const Surface::ptr& l, const Surface::ptr& r) { \
-    auto lb = l->getBounds(), rb = r->getBounds();                 \
-    return (lb.min().axis() + (lb.len().axis() / 2.0) <            \
-            rb.min().axis() + (rb.len().axis() / 2.0));            \
-  }
-
-  COMPFUNC_IMPL(x)
-  COMPFUNC_IMPL(y)
-  COMPFUNC_IMPL(z)
-
   /**
    * Get the Bounding Box for this SurfaceTree.
    *
