@@ -21,8 +21,8 @@ namespace detail {
   template<typename T1, typename T2, typename... Args>
   inline uint32_t _min_index(uint32_t lc, uint32_t rc, T1 l, T2 r, Args... rest) {
     return l < r ?
-        _max_index(lc, rc + 1, l, rest...) :
-        _max_index(rc, rc + 1, r, rest...);
+        _min_index(lc, rc + 1, l, rest...) :
+        _min_index(rc, rc + 1, r, rest...);
   }
 
 }
