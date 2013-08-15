@@ -244,10 +244,6 @@ namespace ray {
   /* *** Triangle *********************************************************** */
   /* ************************************************************************ */
 
-#define max3_coordinate(x, y, z) ((x > y) ? ((x > z) ? 0 : 2) : ((y > z) ? 1 : 2))
-#define max3(x, y, z)            ((x > y) ? ((x > z) ? x : z) : ((y > z) ? y : z))
-#define min3(x, y, z)            ((x < y) ? ((x < z) ? x : z) : ((y < z) ? y : z))
-
   /**
    * Constructor the a Triangle. This needs to be passed the 3 Vectors that at
    * the vertices for the Triangle and the normals for the Vectors.
@@ -281,7 +277,7 @@ namespace ray {
     x = fabs(_norm.x());
     y = fabs(_norm.y());
     z = fabs(_norm.z());
-    switch((d_axis = max3_coordinate(x, y, z))) {
+    switch((d_axis = max_pair(x, 0, y, 1, z, 2))) {
       case 0:
         if((vb.y() - vc.y()) * (vb.z() - va.z()) <
            (vb.z() - vc.z()) * (vb.y() - va.y()))
@@ -309,7 +305,7 @@ namespace ray {
     x = fabs(b.x());
     y = fabs(b.y());
     z = fabs(b.z());
-    v_axis = max3_coordinate(x, y, z);
+    v_axis = max_pair(x, 0, y, 1, z, 2);
 
     a = vb - vc;
     b = va - vc;

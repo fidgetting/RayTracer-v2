@@ -171,7 +171,7 @@ namespace ray {
       curr_ray = Ray(best.i(), newdir.normalize(), best.source());
     }
 
-    return ray::max(ray::min(color, 255), 0);
+    return ray::max(ray::min(color, 255.0), 0.0);
   }
 
   /**

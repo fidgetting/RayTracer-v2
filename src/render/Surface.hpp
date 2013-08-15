@@ -150,7 +150,7 @@ namespace ray {
     _len = base.len();
   }
 
-#define COMP_LAMBDA(axis) \
+#define COMP_LAMBDA(axis)                                \
   [](const Surface::ptr& l, const Surface::ptr& r) {     \
     auto lb = l->getBounds(), rb = r->getBounds();       \
     return (lb.min().axis() + (lb.len().axis() / 2.0) <  \
