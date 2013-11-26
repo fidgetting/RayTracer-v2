@@ -13,22 +13,23 @@ BIN_DIR = ../bin
 
 YACC = bison
 LEX  = lex
-LINK = clang++
-CXX  = clang++
-NVCC = clang++
+LINK = clang
+CXX  = clang
+NVCC = g++
 
 CUFLAGS  = -g -O3
-DISABLED = -Wno-gnu-array-member-paren-init
+DISABLED = gnu-array-member-paren-init deprecated-register
 CFLAGS   = -Wall -DYY_NO_INPUT -std=c++11 -g -O3  `pkg-config gtkmm-3.0 --cflags`
 INCPATH  = -Iload/ -Imodel/ -Irender/ -Iutil/ -Igui/
 LIBRARY  = -lboost_filesystem -lboost_system -lboost_program_options \
-           -lboost_chrono -lboost_thread `pkg-config gtkmm-3.0 --libs`
+           -lboost_thread `pkg-config gtkmm-3.0 --libs`
 
 EXES = $(patsubst %.cpp, ../%, $(wildcard *.cpp))
 EOBJ = $(patsubst ../%, %.o, $(EXES))
 OBJS = $(patsubst %.cpp, %.o, $(wildcard */*.cpp))
 THRU = $(patsubst %.cu, %.o,  $(wildcard */*.cu))
 HEAD = $(wildcard */*.hpp) util/Matrix.tpp
+DISA = $(patsubst %, -Wno-%, $(DISABLED))
 
 all: load/Parser.cpp load/Lexer.cpp 
 	$(MAKE) -C . reload
@@ -44,13 +45,13 @@ $(EXES): ../%: %.cpp $(HEAD) $(OBJS) $(EOBJ) $(THRU)
 	$(LINK) $(OBJS) $(THRU) $*.o $(LIBRARY) -o $@
 
 $(OBJS): %.o: %.cpp $(HEAD) Makefile
-	$(CXX) -c $(INCPATH) $(DISABLED) $(CFLAGS) $(DEF) $< -o $@
+	$(CXX) -c $(INCPATH) $(DISA) $(CFLAGS) $(DEF) $< -o $@
 
 $(THRU): %.o: %.cu $(HEAD) Makefile
-	$(NVCC) -c $(INCPATH) $(CUFLAGS) $< -o $@
+	$(NVCC) -c $(INCPATH) $(CUFLAGS) -xc++ $< -o $@
 
 $(EOBJ): %.o: %.cpp $(HEAD) Makefile
-	$(CXX) -c $(INCPATH) $(DISABLED) $(CFLAGS) $(DEF) $< -o $@
+	$(CXX) -c $(INCPATH) $(DISA) $(CFLAGS) $(DEF) $< -o $@
 
 clean:
 	rm -f $(OBJS) $(THRU)

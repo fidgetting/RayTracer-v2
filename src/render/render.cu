@@ -57,9 +57,11 @@ namespace ray {
         state lr;
     };
 
-    struct {
+    struct threadId_t {
         uint x;
-    } threadIdx;
+    };
+
+    threadId_t threadIdx;
 
     __host__ std::ostream& operator<<(std::ostream& ostr, d_Intersection& inter) {
       return (ostr << "INTER[ l:" << inter.location

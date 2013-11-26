@@ -10,7 +10,7 @@
 
 int main(int argc, char** argv) {
   Glib::RefPtr<Gtk::Application> app =
-      Gtk::Application::create(argc, argv);
+      Gtk::Application::create(argc, argv, "Render.Obj");
 
   ray::gui::ObjViewer view;
 

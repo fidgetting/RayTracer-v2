@@ -44,7 +44,7 @@ Glib::RefPtr<Gdk::Pixbuf> copyOut(const ray::Matrix<ray::Pixel> img) {
 
 int main(int argc, char** argv) {
   Glib::RefPtr<Gtk::Application> app =
-      Gtk::Application::create(argc, argv);
+      Gtk::Application::create(argc, argv, "Tracer.Obj");
 
   if(argc != 3) {
     std::cout << usage << std::endl;
@@ -52,20 +52,20 @@ int main(int argc, char** argv) {
   }
   
   /* validate inputs */
-  fs::path model  = argv[1];
-  fs::path result = argv[2];
+  fs::path m_in  = argv[1];
+  fs::path p_out = argv[2];
   
-  if(!fs::is_regular_file(model)) {
+  if(!fs::is_regular_file(m_in)) {
     std::cout << usage << std::endl;
     return -1;
   }
   
-  if(fs::is_directory(result)) {
-    result = result / "out.png";
+  if(fs::is_directory(p_out)) {
+    p_out = p_out / "out.png";
   }
 
   /* load the model */
-  auto stream = ray::ObjectStream::loadObject(model);
+  auto stream = ray::ObjectStream::loadObject(m_in.string());
 
   ray::Model  model;
   ray::Camera camera;
@@ -75,7 +75,7 @@ int main(int argc, char** argv) {
   /* render the image */
   try {
     copyOut(model.click(camera, 1024, 1024))->save(
-      result.string(), result.extension().string().substr(1));
+      p_out.string(), p_out.extension().string().substr(1));
   } catch(Gdk::PixbufError& error) {
     std::cout << error.what() << std::endl;
   }

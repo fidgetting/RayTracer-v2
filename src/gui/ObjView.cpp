@@ -11,14 +11,13 @@
 #include <render.hpp>
 
 /* boost includes */
-#include <boost/chrono.hpp>
+#include <chrono>
+namespace sc = std::chrono;
 
 /* gtk incldues */
 #include <gtkmm.h>
 #include <gtkmm/stock.h>
 #include <gdkmm.h>
-
-namespace sc = boost::chrono;
 
 namespace ray {
   namespace gui {
